@@ -7,6 +7,12 @@ import { resend, EMAIL_FROM } from "@/lib/resend";
 import { MagicLinkEmail } from "@/emails/magic-link-email";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Auth.js's own "known-safe platform" auto-detection for this doesn't
+  // reliably kick in on Vercel (https://errors.authjs.dev/#untrustedhost --
+  // some visitors got UntrustedHost even from the deployed URL). Vercel
+  // terminates TLS and sets the Host header itself, so trusting it here is
+  // safe -- this isn't a self-hosted box behind an arbitrary reverse proxy.
+  trustHost: true,
   adapter: DrizzleAdapter(db, {
     usersTable: users,
     accountsTable: accounts,
