@@ -1,0 +1,148 @@
+import {
+  pgTable,
+  text,
+  timestamp,
+  integer,
+  doublePrecision,
+  primaryKey,
+  pgEnum,
+} from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import type { AdapterAccountType } from "next-auth/adapters";
+
+// ---------------------------------------------------------------------------
+// Auth.js standard tables (shape required by @auth/drizzle-adapter)
+// ---------------------------------------------------------------------------
+
+export const users = pgTable("user", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name"),
+  email: text("email").unique().notNull(),
+  emailVerified: timestamp("emailVerified", { mode: "date" }),
+  image: text("image"),
+  // App-specific column. NEVER select this from general-purpose queries —
+  // see lib/contacts.ts for the one place it's allowed to be read.
+  phone: text("phone"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const accounts = pgTable(
+  "account",
+  {
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").$type<AdapterAccountType>().notNull(),
+    provider: text("provider").notNull(),
+    providerAccountId: text("providerAccountId").notNull(),
+    refresh_token: text("refresh_token"),
+    access_token: text("access_token"),
+    expires_at: integer("expires_at"),
+    token_type: text("token_type"),
+    scope: text("scope"),
+    id_token: text("id_token"),
+    session_state: text("session_state"),
+  },
+  (account) => [
+    primaryKey({
+      columns: [account.provider, account.providerAccountId],
+    }),
+  ]
+);
+
+export const sessions = pgTable("session", {
+  sessionToken: text("sessionToken").primaryKey(),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  expires: timestamp("expires", { mode: "date" }).notNull(),
+});
+
+export const verificationTokens = pgTable(
+  "verificationToken",
+  {
+    identifier: text("identifier").notNull(),
+    token: text("token").notNull(),
+    expires: timestamp("expires", { mode: "date" }).notNull(),
+  },
+  (vt) => [primaryKey({ columns: [vt.identifier, vt.token] })]
+);
+
+// ---------------------------------------------------------------------------
+// App tables
+// ---------------------------------------------------------------------------
+
+export const postStatusEnum = pgEnum("post_status", [
+  "OPEN",
+  "PENDING",
+  "FILLED",
+  "CANCELLED",
+]);
+
+export const claimStatusEnum = pgEnum("claim_status", [
+  "PROPOSED",
+  "CONFIRMED",
+  "DECLINED",
+  "WITHDRAWN",
+]);
+
+export const posts = pgTable("post", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  authorId: text("author_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  origin: text("origin").notNull(),
+  originLat: doublePrecision("origin_lat"),
+  originLng: doublePrecision("origin_lng"),
+  destination: text("destination").notNull(),
+  destLat: doublePrecision("dest_lat"),
+  destLng: doublePrecision("dest_lng"),
+  // Can be in the future -- this is the "schedule a pickup" field.
+  departAt: timestamp("depart_at").notNull(),
+  notes: text("notes"),
+  status: postStatusEnum("status").notNull().default("OPEN"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const claims = pgTable("claim", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  postId: text("post_id")
+    .notNull()
+    .references(() => posts.id, { onDelete: "cascade" }),
+  claimantId: text("claimant_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  status: claimStatusEnum("status").notNull().default("PROPOSED"),
+  message: text("message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  respondedAt: timestamp("responded_at"),
+});
+
+// ---------------------------------------------------------------------------
+// Relations (used for query-builder joins in lib/db/queries.ts)
+// ---------------------------------------------------------------------------
+
+export const usersRelations = relations(users, ({ many }) => ({
+  posts: many(posts),
+  claims: many(claims),
+}));
+
+export const postsRelations = relations(posts, ({ one, many }) => ({
+  author: one(users, { fields: [posts.authorId], references: [users.id] }),
+  claims: many(claims),
+}));
+
+export const claimsRelations = relations(claims, ({ one }) => ({
+  post: one(posts, { fields: [claims.postId], references: [posts.id] }),
+  claimant: one(users, {
+    fields: [claims.claimantId],
+    references: [users.id],
+  }),
+}));

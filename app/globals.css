@@ -1,0 +1,171 @@
+@import "tailwindcss";
+
+/* Class-based dark mode (driven by next-themes toggling `.dark` on <html>),
+   rather than Tailwind v4's OS-preference-only default. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #f6f7f4;
+  --foreground: #101210;
+  --card: #ffffff;
+  --card-foreground: #101210;
+  --muted: #edefe9;
+  --muted-foreground: #5c655f;
+  --border: #e2e5dd;
+  --primary: #15a24d;
+  --primary-hover: #0f8540;
+  --primary-foreground: #ffffff;
+  --gradient-from: #15a24d;
+  --gradient-to: #8fd424;
+  --accent: #2f6fed;
+  --accent-hover: #1e56d1;
+  --accent-foreground: #ffffff;
+  --ring: #15a24d;
+  --danger: #dc2626;
+  --radius: 1rem;
+}
+
+.dark {
+  --background: #0c0f0c;
+  --foreground: #f1f4ee;
+  --card: #161a15;
+  --card-foreground: #f1f4ee;
+  --muted: #1e2320;
+  --muted-foreground: #9aa39a;
+  --border: #272d26;
+  --primary: #3fe07f;
+  --primary-hover: #34c96f;
+  --primary-foreground: #04220f;
+  --gradient-from: #3fe07f;
+  --gradient-to: #d3f34e;
+  --accent: #5c8fff;
+  --accent-hover: #7ea3ff;
+  --accent-foreground: #04122f;
+  --ring: #3fe07f;
+  --danger: #f87171;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-ring: var(--ring);
+  --color-danger: var(--danger);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 0.25rem);
+  --radius-2xl: calc(var(--radius) + 0.75rem);
+  --font-sans: var(--font-quicksand);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Vivid green -> lime gradient for hero/CTA surfaces. */
+.bg-gradient-primary {
+  background-image: linear-gradient(135deg, var(--gradient-from), var(--gradient-to));
+}
+
+.text-gradient-primary {
+  background-image: linear-gradient(135deg, var(--gradient-from), var(--gradient-to));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Soft colored glow used on hover for primary CTAs and the hero cards --
+   punchier than a plain drop shadow. */
+.shadow-glow {
+  box-shadow: 0 10px 30px -8px color-mix(in srgb, var(--primary) 55%, transparent);
+}
+
+.shadow-glow-lg {
+  box-shadow: 0 20px 55px -12px color-mix(in srgb, var(--primary) 60%, transparent);
+}
+
+/* Subtle entrance animation used by the homepage hero + feed cards. */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Splash-screen entrance: the two choice panels slam in from off-screen. */
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Slow breathing pulse for the center "OR" badge on the splash screen. */
+@keyframes badge-pulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+
+.animate-badge-pulse {
+  animation: badge-pulse 2.4s ease-in-out infinite;
+}
+
+/* Leaflet tiles are drawn as raster images -- inverting + hue-rotating the
+   tile layer is the standard trick for a passable dark map without a
+   separate (often paid) dark tile provider. Markers/popups sit in their own
+   pane and get the filter cancelled out so they stay legible. */
+.dark .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
+}
+
+.dark .leaflet-popup-content-wrapper,
+.dark .leaflet-popup-tip {
+  background: var(--card);
+  color: var(--card-foreground);
+}
+
+.dark .leaflet-container {
+  background: var(--muted);
+}

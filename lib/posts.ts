@@ -1,0 +1,47 @@
+import "server-only";
+
+import { and, eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { posts, claims } from "@/lib/db/schema";
+import type { PostFormValues } from "@/lib/validation";
+
+export async function createPost(authorId: string, values: PostFormValues) {
+  const [post] = await db
+    .insert(posts)
+    .values({
+      authorId,
+      origin: values.origin,
+      originLat: values.originLat ?? null,
+      originLng: values.originLng ?? null,
+      destination: values.destination,
+      destLat: values.destLat ?? null,
+      destLng: values.destLng ?? null,
+      departAt: new Date(values.departAt),
+      notes: values.notes || null,
+    })
+    .returning({ id: posts.id });
+
+  return post;
+}
+
+/** Author cancels their own post any time before it's FILLED. */
+export async function cancelPost(authorId: string, postId: string) {
+  return db.transaction(async (tx) => {
+    const post = await tx.query.posts.findFirst({ where: eq(posts.id, postId) });
+    if (!post) throw new Error("Post not found.");
+    if (post.authorId !== authorId) throw new Error("Forbidden.");
+    if (post.status === "FILLED" || post.status === "CANCELLED") {
+      throw new Error("This post can no longer be cancelled.");
+    }
+
+    const declined = await tx
+      .update(claims)
+      .set({ status: "DECLINED", respondedAt: new Date() })
+      .where(and(eq(claims.postId, postId), eq(claims.status, "PROPOSED")))
+      .returning({ claimantId: claims.claimantId });
+
+    await tx.update(posts).set({ status: "CANCELLED", updatedAt: new Date() }).where(eq(posts.id, postId));
+
+    return { autoDeclinedClaimantIds: declined.map((d) => d.claimantId) };
+  });
+}
