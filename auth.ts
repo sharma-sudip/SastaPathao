@@ -44,12 +44,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           console.warn(`RESEND_API_KEY not set -- sign-in code for ${email}: ${token} (link: ${url})`);
           return;
         }
-        await resend.emails.send({
+        const { error } = await resend.emails.send({
           from: EMAIL_FROM,
           to: email,
           subject: `${token} is your Sasta Pathao sign-in code`,
           react: MagicLinkEmail({ code: token, url }),
         });
+        if (error) {
+          // The Resend SDK doesn't throw on a failed send -- it resolves
+          // with { error } instead. Left unchecked, a bad key/unverified
+          // sender/etc. silently "succeeds": no email goes out, but nothing
+          // here notices, so Auth.js proceeds as if it worked. Throwing
+          // surfaces the real reason in the server logs (via Auth.js's own
+          // [auth][error] logging) instead of a silent no-op.
+          throw new Error(`Resend failed to send the sign-in email: ${error.message}`);
+        }
         if (process.env.NODE_ENV !== "production") {
           // Resend (via AWS SES) rewrites links for click tracking, and that
           // tracking redirect can't resolve a `localhost` destination -- it
