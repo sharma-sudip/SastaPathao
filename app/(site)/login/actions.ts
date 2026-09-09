@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
 import { loginFormSchema } from "@/lib/validation";
@@ -15,13 +16,17 @@ export async function requestMagicLink(_prevState: LoginState, formData: FormDat
   const callbackUrl = (formData.get("callbackUrl") as string) || "/";
 
   try {
-    await signIn("resend", { email: parsed.data.email, redirectTo: callbackUrl });
+    // redirect: false -- the email/code still gets sent either way, this
+    // just stops Auth.js from redirecting to /login/verify-request itself,
+    // since its version of that redirect doesn't carry the email along and
+    // the verify-request page needs it to build the code-verification form.
+    await signIn("resend", { email: parsed.data.email, redirectTo: callbackUrl, redirect: false });
   } catch (error) {
-    // signIn() throws Next.js's internal redirect signal on success -- let it
-    // propagate so the router actually navigates to /login/verify-request.
     if (error instanceof AuthError) {
-      return { error: "Could not send the sign-in email. Please try again." };
+      return { error: "Could not send the sign-in code. Please try again." };
     }
     throw error;
   }
+
+  redirect(`/login/verify-request?${new URLSearchParams({ email: parsed.data.email, callbackUrl })}`);
 }

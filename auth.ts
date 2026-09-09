@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import NextAuth from "next-auth";
 import Resend from "next-auth/providers/resend";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
@@ -27,25 +28,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Resend({
       apiKey: process.env.AUTH_RESEND_KEY ?? process.env.RESEND_API_KEY,
       from: process.env.EMAIL_FROM,
-      async sendVerificationRequest({ identifier: email, url }) {
+      // A 6-digit code the user reads on their phone (where the email
+      // landed) and types into the browser they started the sign-in from --
+      // the magic-link click otherwise finishes the sign-in on whichever
+      // device opens the link, not the one that requested it. `token` here
+      // becomes the `?token=` the link still carries too, so clicking it on
+      // the same device still works as a shortcut.
+      generateVerificationToken: async () => String(randomInt(0, 1_000_000)).padStart(6, "0"),
+      // Short-lived, since it's now something a person retypes rather than
+      // an unguessable link -- default was 24h, that's too long for a
+      // 6-digit code to stay valid.
+      maxAge: 60 * 15,
+      async sendVerificationRequest({ identifier: email, url, token }) {
         if (!process.env.RESEND_API_KEY) {
-          console.warn(`RESEND_API_KEY not set -- sign-in link for ${email}: ${url}`);
+          console.warn(`RESEND_API_KEY not set -- sign-in code for ${email}: ${token} (link: ${url})`);
           return;
         }
         await resend.emails.send({
           from: EMAIL_FROM,
           to: email,
-          subject: "Sign in to Sasta Pathao",
-          react: MagicLinkEmail({ url }),
+          subject: `${token} is your Sasta Pathao sign-in code`,
+          react: MagicLinkEmail({ code: token, url }),
         });
         if (process.env.NODE_ENV !== "production") {
           // Resend (via AWS SES) rewrites links for click tracking, and that
           // tracking redirect can't resolve a `localhost` destination -- it
-          // 400s with an awstrack.me error instead of redirecting. Clicking
-          // the emailed link won't work in local dev regardless of the
-          // account; copy this raw URL instead. Tracking only rewrites to a
-          // *real* public host, so this isn't an issue once deployed.
-          console.log(`[dev] sign-in link for ${email}: ${url}`);
+          // 400s with an awstrack.me error instead of redirecting. The code
+          // isn't affected by this, only the fallback link.
+          console.log(`[dev] sign-in code for ${email}: ${token} (link: ${url})`);
         }
       },
     }),
@@ -53,6 +63,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: {
     signIn: "/login",
     verifyRequest: "/login/verify-request",
+    // Verification (bad/expired/already-used code) doesn't have its own
+    // `kind`, so it falls back to Auth.js's generic /api/auth/error page
+    // unless we route it back to our own sign-in page instead.
+    error: "/login",
   },
   callbacks: {
     session({ session, user }) {

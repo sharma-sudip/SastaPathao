@@ -12,7 +12,8 @@ project, not a Pathao product.
 
 - [Next.js](https://nextjs.org) (App Router, TypeScript) on Vercel
 - [Neon](https://neon.tech) Postgres via [Drizzle ORM](https://orm.drizzle.team)
-- [Auth.js](https://authjs.dev) (NextAuth v5) — passwordless email magic-link sign-in
+- [Auth.js](https://authjs.dev) (NextAuth v5) — passwordless email sign-in: a 6-digit code (plus a
+  click-through link as a shortcut when it's opened on the same device)
 - [Resend](https://resend.com) + [React Email](https://react.email) for transactional email
 - [Leaflet](https://leafletjs.com) + OpenStreetMap tiles + [Nominatim](https://nominatim.org)
   geocoding — no API key required

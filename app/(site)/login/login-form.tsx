@@ -28,7 +28,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
         disabled={pending}
         className="w-full rounded-full bg-gradient-primary px-4 py-2.5 font-bold text-primary-foreground shadow-sm transition hover:shadow-glow disabled:opacity-60"
       >
-        {pending ? "Sending…" : "Email me a sign-in link"}
+        {pending ? "Sending…" : "Email me a sign-in code"}
       </button>
     </form>
   );
