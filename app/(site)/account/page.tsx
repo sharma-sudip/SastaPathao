@@ -25,7 +25,12 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           ? "Add your name and number so a matched rider/driver can actually reach you."
           : "This is what matched riders/drivers see once you confirm a ride together."}
       </p>
-      <ProfileForm name={me?.name ?? ""} phone={me?.phone ?? ""} callbackUrl={callbackUrl} />
+      <ProfileForm
+        email={session.user.email ?? ""}
+        name={me?.name ?? ""}
+        phone={me?.phone ?? ""}
+        callbackUrl={callbackUrl}
+      />
       {!isOnboarding && (
         <div className="mt-4">
           <PushToggle />

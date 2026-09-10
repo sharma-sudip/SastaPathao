@@ -77,7 +77,19 @@ export function PushToggle() {
     setStatus("off");
   }
 
-  if (status === "unsupported" || status === "loading") return null;
+  if (status === "loading") return null;
+
+  if (status === "unsupported") {
+    return (
+      <div className="rounded-2xl border-2 border-border bg-card p-4 shadow-sm">
+        <p className="text-sm font-bold text-card-foreground">Browser notifications</p>
+        <p className="text-xs text-muted-foreground">
+          Not supported by this browser. Some mobile browsers (e.g. Samsung Internet) don&apos;t
+          support push notifications yet — try Chrome instead.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl border-2 border-border bg-card p-4 shadow-sm">

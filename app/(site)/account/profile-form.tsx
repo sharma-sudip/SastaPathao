@@ -4,10 +4,12 @@ import { useActionState } from "react";
 import { updateProfileAction } from "./actions";
 
 export function ProfileForm({
+  email,
   name,
   phone,
   callbackUrl,
 }: {
+  email: string;
   name: string;
   phone: string;
   callbackUrl?: string;
@@ -17,6 +19,20 @@ export function ProfileForm({
   return (
     <form action={action} className="space-y-4 rounded-2xl border-2 border-border bg-card p-6 shadow-sm">
       {callbackUrl && <input type="hidden" name="callbackUrl" value={callbackUrl} />}
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium text-foreground">
+          Email
+        </label>
+        <input
+          id="email"
+          value={email}
+          disabled
+          className="mt-1 w-full cursor-not-allowed rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground"
+        />
+        <p className="mt-1 text-xs text-muted-foreground">
+          This is what you sign in with — not editable here.
+        </p>
+      </div>
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-foreground">
           Name
