@@ -7,7 +7,8 @@ import { createClaim, withdrawClaim, confirmClaim, declineClaim } from "@/lib/cl
 import { cancelPost } from "@/lib/posts";
 import { getPostById } from "@/lib/db/queries";
 import { revealContactIfAuthorized } from "@/lib/contacts";
-import { claimFormSchema } from "@/lib/validation";
+import { getMessagesForClaim, sendMessage } from "@/lib/messages";
+import { claimFormSchema, messageFormSchema } from "@/lib/validation";
 import { sendEmailSafely, EMAIL_FROM } from "@/lib/resend";
 import { NewClaimEmail } from "@/emails/new-claim-email";
 import { ClaimConfirmedEmail } from "@/emails/claim-confirmed-email";
@@ -149,6 +150,25 @@ export async function declineAction(claimId: string, postId: string) {
 
   revalidatePath(`/posts/${postId}`);
   revalidatePath("/");
+}
+
+/** Polled by <ClaimChat> -- returns null (rather than throwing) if the
+ *  viewer isn't a party to this claim's thread, so the client can just
+ *  stop polling rather than treat it as a transient error. */
+export async function fetchMessagesAction(claimId: string) {
+  const session = await auth();
+  if (!session?.user) return null;
+  return getMessagesForClaim(claimId, session.user.id);
+}
+
+export async function sendMessageAction(claimId: string, body: string) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Not signed in.");
+
+  const parsed = messageFormSchema.safeParse({ claimId, body });
+  if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Invalid message.");
+
+  return sendMessage(parsed.data.claimId, session.user.id, parsed.data.body);
 }
 
 export async function cancelPostAction(postId: string) {

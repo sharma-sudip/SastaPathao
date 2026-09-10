@@ -1,6 +1,9 @@
 import { Check, X } from "lucide-react";
 import type { PostDetail } from "@/lib/db/queries";
 import { confirmAction, declineAction, withdrawAction } from "@/app/(site)/posts/[id]/actions";
+import { ClaimChat } from "@/components/claim-chat";
+
+const ACTIVE_STATUSES = new Set(["PROPOSED", "CONFIRMED"]);
 
 const STATUS_STYLE: Record<string, string> = {
   PROPOSED: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
@@ -68,6 +71,10 @@ export function ClaimList({ post, viewerId }: { post: PostDetail; viewerId: stri
                 Withdraw claim
               </button>
             </form>
+          )}
+
+          {viewerId && ACTIVE_STATUSES.has(claim.status) && (
+            <ClaimChat claimId={claim.id} viewerId={viewerId} />
           )}
         </div>
       ))}

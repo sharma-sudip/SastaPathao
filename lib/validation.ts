@@ -25,6 +25,11 @@ export const claimFormSchema = z.object({
   message: z.string().trim().max(300).optional().or(z.literal("")),
 });
 
+export const messageFormSchema = z.object({
+  claimId: z.string().uuid(),
+  body: z.string().trim().min(1, "Type a message.").max(1000, "Keep it under 1000 characters."),
+});
+
 export const loginFormSchema = z.object({
   email: z.email("Enter a valid email address."),
 });

@@ -125,6 +125,24 @@ export const claims = pgTable("claim", {
   respondedAt: timestamp("responded_at"),
 });
 
+// One thread per claim, between that post's author and that one claimant --
+// not a per-post group chat, so competing claimants on the same post can't
+// see each other's coordination with the rider. Same authorization boundary
+// as contact reveal (lib/contacts.ts): author + that specific claimant only.
+export const messages = pgTable("message", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  claimId: text("claim_id")
+    .notNull()
+    .references(() => claims.id, { onDelete: "cascade" }),
+  senderId: text("sender_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // ---------------------------------------------------------------------------
 // Relations (used for query-builder joins in lib/db/queries.ts)
 // ---------------------------------------------------------------------------
@@ -132,6 +150,7 @@ export const claims = pgTable("claim", {
 export const usersRelations = relations(users, ({ many }) => ({
   posts: many(posts),
   claims: many(claims),
+  messages: many(messages),
 }));
 
 export const postsRelations = relations(posts, ({ one, many }) => ({
@@ -139,10 +158,16 @@ export const postsRelations = relations(posts, ({ one, many }) => ({
   claims: many(claims),
 }));
 
-export const claimsRelations = relations(claims, ({ one }) => ({
+export const claimsRelations = relations(claims, ({ one, many }) => ({
   post: one(posts, { fields: [claims.postId], references: [posts.id] }),
   claimant: one(users, {
     fields: [claims.claimantId],
     references: [users.id],
   }),
+  messages: many(messages),
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  claim: one(claims, { fields: [messages.claimId], references: [claims.id] }),
+  sender: one(users, { fields: [messages.senderId], references: [users.id] }),
 }));
