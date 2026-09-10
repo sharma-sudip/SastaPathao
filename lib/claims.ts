@@ -62,7 +62,7 @@ export async function withdrawClaim(claimantId: string, claimId: string) {
       }
     }
 
-    return { postId: claim.postId };
+    return { postId: claim.postId, authorId: post?.authorId };
   });
 }
 

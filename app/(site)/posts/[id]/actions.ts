@@ -13,6 +13,7 @@ import { sendEmailSafely, EMAIL_FROM } from "@/lib/resend";
 import { NewClaimEmail } from "@/emails/new-claim-email";
 import { ClaimConfirmedEmail } from "@/emails/claim-confirmed-email";
 import { ClaimDeclinedEmail } from "@/emails/claim-declined-email";
+import { ClaimWithdrawnEmail } from "@/emails/claim-withdrawn-email";
 import { NewMessageEmail } from "@/emails/new-message-email";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
@@ -69,7 +70,21 @@ export async function withdrawAction(claimId: string, postId: string) {
   if (!session?.user) redirect(`/login?callbackUrl=/posts/${postId}`);
 
   try {
-    await withdrawClaim(session.user.id, claimId);
+    const result = await withdrawClaim(session.user.id, claimId);
+    const post = await getPostById(postId);
+    const authorContact = result.authorId ? await emailFor(result.authorId) : null;
+    if (post && authorContact?.email) {
+      await sendEmailSafely({
+        from: EMAIL_FROM,
+        to: authorContact.email,
+        subject: "A volunteer backed out",
+        react: ClaimWithdrawnEmail({
+          postUrl: await siteUrl(postId),
+          origin: post.origin,
+          destination: post.destination,
+        }),
+      });
+    }
   } catch (err) {
     console.error("withdrawAction failed:", err);
   }

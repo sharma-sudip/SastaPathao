@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Hand } from "lucide-react";
 import type { OpenPost } from "@/lib/db/queries";
+import { formatDepartAt } from "@/lib/format-date";
 
 export function PostCard({ post }: { post: OpenPost }) {
   return (
@@ -13,15 +14,7 @@ export function PostCard({ post }: { post: OpenPost }) {
           <Hand className="h-3.5 w-3.5" strokeWidth={2.5} />
           Needs a ride
         </span>
-        <span className="text-xs font-medium text-muted-foreground">
-          {new Date(post.departAt).toLocaleString(undefined, {
-            weekday: "short",
-            month: "short",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-          })}
-        </span>
+        <span className="text-xs font-medium text-muted-foreground">{formatDepartAt(post.departAt)}</span>
       </div>
 
       <p className="mt-2 text-base font-bold text-card-foreground">

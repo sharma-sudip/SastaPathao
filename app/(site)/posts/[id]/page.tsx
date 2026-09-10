@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Hand } from "lucide-react";
 import { auth } from "@/auth";
 import { getPostById } from "@/lib/db/queries";
+import { formatDepartAt } from "@/lib/format-date";
 import { ContactCard } from "@/components/contact-card";
 import { ClaimList } from "@/components/claim-list";
 import { PostMapSection } from "@/components/post-map-section";
@@ -32,15 +33,7 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
         <h1 className="mt-2 text-2xl font-bold text-card-foreground">
           {post.origin} <span className="text-muted-foreground">→</span> {post.destination}
         </h1>
-        <p className="mt-1 text-muted-foreground">
-          {new Date(post.departAt).toLocaleString(undefined, {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-          })}
-        </p>
+        <p className="mt-1 text-muted-foreground">{formatDepartAt(post.departAt, "long")}</p>
         <p className="mt-1 text-sm text-muted-foreground">Posted by {post.author?.name ?? "A neighbor"}</p>
       </div>
 
