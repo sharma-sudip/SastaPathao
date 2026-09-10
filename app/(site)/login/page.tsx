@@ -1,11 +1,22 @@
+import { cookies } from "next/headers";
 import { LoginForm } from "./login-form";
+
+// Must match the literal in actions.ts (see the comment there for why it
+// isn't just imported).
+const CALLBACK_COOKIE = "login_callback_url";
 
 export default async function LoginPage({
   searchParams,
 }: PageProps<"/login">) {
   const params = await searchParams;
   const callbackUrlParam = params?.callbackUrl;
-  const callbackUrl = Array.isArray(callbackUrlParam) ? callbackUrlParam[0] : callbackUrlParam ?? "/";
+  const queryCallbackUrl = Array.isArray(callbackUrlParam) ? callbackUrlParam[0] : callbackUrlParam;
+  // A failed code redirects here as just "/login?error=Verification" --
+  // Auth.js's own redirect drops callbackUrl, so fall back to the cookie
+  // requestMagicLink set before sending the code, rather than silently
+  // losing the original destination on a retry.
+  const cookieCallbackUrl = (await cookies()).get(CALLBACK_COOKIE)?.value;
+  const callbackUrl = queryCallbackUrl ?? cookieCallbackUrl ?? "/";
   const error = Array.isArray(params?.error) ? params.error[0] : params?.error;
 
   return (

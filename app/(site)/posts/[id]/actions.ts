@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { createClaim, withdrawClaim, confirmClaim, declineClaim } from "@/lib/claims";
 import { cancelPost } from "@/lib/posts";
-import { getPostById } from "@/lib/db/queries";
+import { getPostById, getUserProfile, isProfileComplete } from "@/lib/db/queries";
 import { revealContactIfAuthorized } from "@/lib/contacts";
 import { getMessagesForClaim, sendMessage } from "@/lib/messages";
 import { claimFormSchema, messageFormSchema } from "@/lib/validation";
@@ -13,6 +13,7 @@ import { sendEmailSafely, EMAIL_FROM } from "@/lib/resend";
 import { NewClaimEmail } from "@/emails/new-claim-email";
 import { ClaimConfirmedEmail } from "@/emails/claim-confirmed-email";
 import { ClaimDeclinedEmail } from "@/emails/claim-declined-email";
+import { NewMessageEmail } from "@/emails/new-message-email";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -30,6 +31,9 @@ async function emailFor(userId: string) {
 export async function claimAction(postId: string, formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect(`/login?callbackUrl=/posts/${postId}`);
+
+  const profile = await getUserProfile(session.user.id);
+  if (!isProfileComplete(profile)) redirect(`/account?callbackUrl=/posts/${postId}`);
 
   const parsed = claimFormSchema.safeParse({ postId, message: formData.get("message") ?? "" });
   if (!parsed.success) return;
@@ -168,7 +172,31 @@ export async function sendMessageAction(claimId: string, body: string) {
   const parsed = messageFormSchema.safeParse({ claimId, body });
   if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Invalid message.");
 
-  return sendMessage(parsed.data.claimId, session.user.id, parsed.data.body);
+  const message = await sendMessage(parsed.data.claimId, session.user.id, parsed.data.body);
+
+  // Notification email -- best-effort, must not fail the actual send (the
+  // message is already saved and showing in the sender's own chat by now).
+  try {
+    const [post, recipient] = await Promise.all([getPostById(message.postId), emailFor(message.recipientId)]);
+    if (post && recipient?.email) {
+      await sendEmailSafely({
+        from: EMAIL_FROM,
+        to: recipient.email,
+        subject: "You have a new message",
+        react: NewMessageEmail({
+          postUrl: await siteUrl(message.postId),
+          origin: post.origin,
+          destination: post.destination,
+          senderName: session.user.name ?? null,
+          body: parsed.data.body,
+        }),
+      });
+    }
+  } catch (err) {
+    console.error("sendMessageAction notification email failed:", err);
+  }
+
+  return message;
 }
 
 export async function cancelPostAction(postId: string) {

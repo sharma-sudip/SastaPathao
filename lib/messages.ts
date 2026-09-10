@@ -14,7 +14,7 @@ const ACTIVE = ["PROPOSED", "CONFIRMED"] as const;
 async function authorizeThread(claimId: string, viewerId: string) {
   const claim = await db.query.claims.findFirst({
     where: eq(claims.id, claimId),
-    columns: { id: true, claimantId: true, status: true },
+    columns: { id: true, postId: true, claimantId: true, status: true },
     with: { post: { columns: { authorId: true } } },
   });
   if (!claim) return null;
@@ -45,5 +45,6 @@ export async function sendMessage(claimId: string, senderId: string, body: strin
     .values({ claimId, senderId, body })
     .returning({ id: messages.id, senderId: messages.senderId, body: messages.body, createdAt: messages.createdAt });
 
-  return message;
+  const recipientId = senderId === claim.claimantId ? claim.post.authorId : claim.claimantId;
+  return { ...message, recipientId, postId: claim.postId };
 }

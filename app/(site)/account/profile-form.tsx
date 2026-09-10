@@ -3,11 +3,20 @@
 import { useActionState } from "react";
 import { updateProfileAction } from "./actions";
 
-export function ProfileForm({ name, phone }: { name: string; phone: string }) {
+export function ProfileForm({
+  name,
+  phone,
+  callbackUrl,
+}: {
+  name: string;
+  phone: string;
+  callbackUrl?: string;
+}) {
   const [state, action, pending] = useActionState(updateProfileAction, undefined);
 
   return (
     <form action={action} className="space-y-4 rounded-2xl border-2 border-border bg-card p-6 shadow-sm">
+      {callbackUrl && <input type="hidden" name="callbackUrl" value={callbackUrl} />}
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-foreground">
           Name
@@ -29,6 +38,7 @@ export function ProfileForm({ name, phone }: { name: string; phone: string }) {
           name="phone"
           type="tel"
           defaultValue={phone}
+          required={!!callbackUrl}
           placeholder="(330) 555-0100"
           className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
         />
@@ -37,6 +47,11 @@ export function ProfileForm({ name, phone }: { name: string; phone: string }) {
           open feed.
         </p>
       </div>
+      {state?.success && (
+        <p className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary">
+          Profile saved.
+        </p>
+      )}
       {state?.error && <p className="text-sm text-danger">{state.error}</p>}
       <button
         type="submit"

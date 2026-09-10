@@ -76,6 +76,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     // `kind`, so it falls back to Auth.js's generic /api/auth/error page
     // unless we route it back to our own sign-in page instead.
     error: "/login",
+    // First-ever sign-in for a brand-new account (Auth.js tracks this
+    // itself) goes to the profile page instead of straight to callbackUrl --
+    // a fresh account has no name/phone yet, and a matched rider/driver
+    // needs a way to actually reach the other person. callbackUrl is
+    // preserved onto this redirect, and account/actions.ts sends the user
+    // on to it once they've saved. requests/new and the claim action also
+    // re-check profile completeness independently, in case someone
+    // abandons this step.
+    newUser: "/account",
   },
   callbacks: {
     session({ session, user }) {

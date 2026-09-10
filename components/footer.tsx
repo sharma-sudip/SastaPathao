@@ -7,7 +7,15 @@ export function Footer() {
           payments — arrange any costs directly with your driver or rider. Use your own judgment
           when meeting someone you&apos;ve matched with here.
         </p>
-        <p>Open source — contributions welcome.</p>
+        <p>
+          Open source — contributions welcome.{" "}
+          <a
+            href="https://github.com/sharma-sudip/SastaPathao"
+            className="font-semibold text-foreground underline underline-offset-2 hover:text-primary"
+          >
+            github.com/sharma-sudip/SastaPathao
+          </a>
+        </p>
       </div>
     </footer>
   );
