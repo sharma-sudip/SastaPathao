@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { posts, claims } from "@/lib/db/schema";
 import type { PostFormValues } from "@/lib/validation";
+import { parseEasternDatetimeLocal } from "@/lib/format-date";
 
 export async function createPost(authorId: string, values: PostFormValues) {
   const [post] = await db
@@ -16,7 +17,11 @@ export async function createPost(authorId: string, values: PostFormValues) {
       destination: values.destination,
       destLat: values.destLat ?? null,
       destLng: values.destLng ?? null,
-      departAt: new Date(values.departAt),
+      // values.departAt is a <input type="datetime-local"> value -- no
+      // timezone attached, so `new Date(...)` would silently misinterpret
+      // it using the server's zone (UTC on Vercel) instead of the Eastern
+      // time its poster meant. See lib/format-date.ts's comment.
+      departAt: parseEasternDatetimeLocal(values.departAt),
       notes: values.notes || null,
     })
     .returning({ id: posts.id });

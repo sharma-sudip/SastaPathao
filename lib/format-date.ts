@@ -17,3 +17,44 @@ export function formatDepartAt(date: Date | string, style: "short" | "long" = "s
     minute: "2-digit",
   });
 }
+
+/** Offset (in minutes, e.g. -240 for EDT) of `timeZone` at the instant `date` falls on. */
+function timeZoneOffsetMinutes(date: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+    .formatToParts(date)
+    .reduce<Record<string, string>>((acc, p) => ((acc[p.type] = p.value), acc), {});
+
+  const asUTC = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+    Number(parts.second)
+  );
+  return (asUTC - date.getTime()) / 60_000;
+}
+
+/**
+ * A `<input type="datetime-local">` value (e.g. "2026-09-10T15:00") carries
+ * no timezone -- `new Date(naive)` would interpret it using whichever
+ * timezone the *parsing* environment happens to be in (Vercel: UTC), not
+ * the Eastern time its poster meant, silently storing a timestamp hours off
+ * from what they typed. This instead explicitly treats the naive string as
+ * America/New_York wall-clock time (correctly handling the EST/EDT DST
+ * boundary) and returns the real UTC instant.
+ */
+export function parseEasternDatetimeLocal(naive: string): Date {
+  const utcGuess = new Date(`${naive}Z`); // parse the same digits, forced to UTC
+  const offsetMinutes = timeZoneOffsetMinutes(utcGuess, TIME_ZONE);
+  return new Date(utcGuess.getTime() - offsetMinutes * 60_000);
+}
