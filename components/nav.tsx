@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Car } from "lucide-react";
 import { auth, signOut } from "@/auth";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { MobileNavMenu } from "@/components/mobile-nav-menu";
 
 export async function Nav() {
   const session = await auth();
@@ -65,6 +66,7 @@ export async function Nav() {
             </Link>
           )}
           <ThemeToggle />
+          <MobileNavMenu isSignedIn={!!session?.user} />
         </nav>
       </div>
     </header>
