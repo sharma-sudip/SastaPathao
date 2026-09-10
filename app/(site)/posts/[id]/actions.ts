@@ -10,6 +10,7 @@ import { revealContactIfAuthorized } from "@/lib/contacts";
 import { getMessagesForClaim, sendMessage } from "@/lib/messages";
 import { claimFormSchema, messageFormSchema } from "@/lib/validation";
 import { sendEmailSafely, EMAIL_FROM } from "@/lib/resend";
+import { sendPushSafely } from "@/lib/push";
 import { NewClaimEmail } from "@/emails/new-claim-email";
 import { ClaimConfirmedEmail } from "@/emails/claim-confirmed-email";
 import { ClaimDeclinedEmail } from "@/emails/claim-declined-email";
@@ -44,17 +45,25 @@ export async function claimAction(postId: string, formData: FormData) {
 
     const post = await getPostById(postId);
     const author = await emailFor(authorId);
-    if (author?.email && post) {
-      await sendEmailSafely({
-        from: EMAIL_FROM,
-        to: author.email,
-        subject: "Someone wants to fill your ride",
-        react: NewClaimEmail({
-          postUrl: await siteUrl(postId),
-          origin: post.origin,
-          destination: post.destination,
-          claimantName: session.user.name ?? null,
-        }),
+    if (post) {
+      const url = await siteUrl(postId);
+      if (author?.email) {
+        await sendEmailSafely({
+          from: EMAIL_FROM,
+          to: author.email,
+          subject: "Someone wants to fill your ride",
+          react: NewClaimEmail({
+            postUrl: url,
+            origin: post.origin,
+            destination: post.destination,
+            claimantName: session.user.name ?? null,
+          }),
+        });
+      }
+      await sendPushSafely(authorId, {
+        title: "Someone wants to fill your ride",
+        body: `${session.user.name ?? "A neighbor"} offered for ${post.origin} → ${post.destination}`,
+        url,
       });
     }
   } catch (err) {
@@ -72,17 +81,21 @@ export async function withdrawAction(claimId: string, postId: string) {
   try {
     const result = await withdrawClaim(session.user.id, claimId);
     const post = await getPostById(postId);
-    const authorContact = result.authorId ? await emailFor(result.authorId) : null;
-    if (post && authorContact?.email) {
-      await sendEmailSafely({
-        from: EMAIL_FROM,
-        to: authorContact.email,
-        subject: "A volunteer backed out",
-        react: ClaimWithdrawnEmail({
-          postUrl: await siteUrl(postId),
-          origin: post.origin,
-          destination: post.destination,
-        }),
+    if (post && result.authorId) {
+      const url = await siteUrl(postId);
+      const authorContact = await emailFor(result.authorId);
+      if (authorContact?.email) {
+        await sendEmailSafely({
+          from: EMAIL_FROM,
+          to: authorContact.email,
+          subject: "A volunteer backed out",
+          react: ClaimWithdrawnEmail({ postUrl: url, origin: post.origin, destination: post.destination }),
+        });
+      }
+      await sendPushSafely(result.authorId, {
+        title: "A volunteer backed out",
+        body: `${post.origin} → ${post.destination} is back open`,
+        url,
       });
     }
   } catch (err) {
@@ -121,6 +134,11 @@ export async function confirmAction(claimId: string, postId: string) {
           }),
         });
       }
+      await sendPushSafely(result.claimantId, {
+        title: "Your ride is confirmed 🎉",
+        body: `${post.origin} → ${post.destination}`,
+        url,
+      });
 
       for (const declinedId of result.autoDeclinedClaimantIds) {
         const declinedContact = await emailFor(declinedId);
@@ -132,6 +150,11 @@ export async function confirmAction(claimId: string, postId: string) {
             react: ClaimDeclinedEmail({ postUrl: url, origin: post.origin, destination: post.destination }),
           });
         }
+        await sendPushSafely(declinedId, {
+          title: "Your claim wasn't accepted this time",
+          body: `${post.origin} → ${post.destination} went to someone else`,
+          url,
+        });
       }
     }
   } catch (err) {
@@ -150,17 +173,21 @@ export async function declineAction(claimId: string, postId: string) {
   try {
     const result = await declineClaim(session.user.id, claimId);
     const post = await getPostById(postId);
-    const declinedContact = await emailFor(result.claimantId);
-    if (post && declinedContact?.email) {
-      await sendEmailSafely({
-        from: EMAIL_FROM,
-        to: declinedContact.email,
-        subject: "Your claim wasn't accepted this time",
-        react: ClaimDeclinedEmail({
-          postUrl: await siteUrl(postId),
-          origin: post.origin,
-          destination: post.destination,
-        }),
+    if (post) {
+      const url = await siteUrl(postId);
+      const declinedContact = await emailFor(result.claimantId);
+      if (declinedContact?.email) {
+        await sendEmailSafely({
+          from: EMAIL_FROM,
+          to: declinedContact.email,
+          subject: "Your claim wasn't accepted this time",
+          react: ClaimDeclinedEmail({ postUrl: url, origin: post.origin, destination: post.destination }),
+        });
+      }
+      await sendPushSafely(result.claimantId, {
+        title: "Your claim wasn't accepted this time",
+        body: `${post.origin} → ${post.destination}`,
+        url,
       });
     }
   } catch (err) {
@@ -189,26 +216,34 @@ export async function sendMessageAction(claimId: string, body: string) {
 
   const message = await sendMessage(parsed.data.claimId, session.user.id, parsed.data.body);
 
-  // Notification email -- best-effort, must not fail the actual send (the
+  // Notifications -- best-effort, must not fail the actual send (the
   // message is already saved and showing in the sender's own chat by now).
   try {
     const [post, recipient] = await Promise.all([getPostById(message.postId), emailFor(message.recipientId)]);
-    if (post && recipient?.email) {
-      await sendEmailSafely({
-        from: EMAIL_FROM,
-        to: recipient.email,
-        subject: "You have a new message",
-        react: NewMessageEmail({
-          postUrl: await siteUrl(message.postId),
-          origin: post.origin,
-          destination: post.destination,
-          senderName: session.user.name ?? null,
-          body: parsed.data.body,
-        }),
+    if (post) {
+      const url = await siteUrl(message.postId);
+      if (recipient?.email) {
+        await sendEmailSafely({
+          from: EMAIL_FROM,
+          to: recipient.email,
+          subject: "You have a new message",
+          react: NewMessageEmail({
+            postUrl: url,
+            origin: post.origin,
+            destination: post.destination,
+            senderName: session.user.name ?? null,
+            body: parsed.data.body,
+          }),
+        });
+      }
+      await sendPushSafely(message.recipientId, {
+        title: `${session.user.name ?? "Someone"} sent you a message`,
+        body: parsed.data.body,
+        url,
       });
     }
   } catch (err) {
-    console.error("sendMessageAction notification email failed:", err);
+    console.error("sendMessageAction notification failed:", err);
   }
 
   return message;
@@ -222,6 +257,7 @@ export async function cancelPostAction(postId: string) {
     const result = await cancelPost(session.user.id, postId);
     const post = await getPostById(postId);
     if (post) {
+      const url = await siteUrl(postId);
       for (const claimantId of result.autoDeclinedClaimantIds) {
         const contact = await emailFor(claimantId);
         if (contact?.email) {
@@ -229,13 +265,14 @@ export async function cancelPostAction(postId: string) {
             from: EMAIL_FROM,
             to: contact.email,
             subject: "A ride you claimed was cancelled",
-            react: ClaimDeclinedEmail({
-              postUrl: await siteUrl(postId),
-              origin: post.origin,
-              destination: post.destination,
-            }),
+            react: ClaimDeclinedEmail({ postUrl: url, origin: post.origin, destination: post.destination }),
           });
         }
+        await sendPushSafely(claimantId, {
+          title: "A ride you claimed was cancelled",
+          body: `${post.origin} → ${post.destination}`,
+          url,
+        });
       }
     }
   } catch (err) {

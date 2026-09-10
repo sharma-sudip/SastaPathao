@@ -15,6 +15,8 @@ project, not a Pathao product.
 - [Auth.js](https://authjs.dev) (NextAuth v5) — passwordless email sign-in: a 6-digit code (plus a
   click-through link as a shortcut when it's opened on the same device)
 - [Resend](https://resend.com) + [React Email](https://react.email) for transactional email
+- [Web Push](https://web.dev/push-notifications-overview/) (VAPID) for optional browser
+  notifications — a self-generated keypair, not a third-party account/API key
 - [Leaflet](https://leafletjs.com) + OpenStreetMap tiles + [Photon](https://photon.komoot.io)
   geocoding — no API key or account required for either
 - Tailwind CSS
@@ -100,6 +102,13 @@ project, not a Pathao product.
   viewer is the post's author or has an active claim on it before the phone column is even
   selected from the database. See that file's comments for the full rationale — don't add
   `phone` to any other query.
+- **Notifications**: every claim-lifecycle event (new claim, confirmed, declined, withdrawn,
+  post cancelled) and every chat message sends both an email and a browser push notification
+  (`lib/push.ts`'s `sendPushSafely`, best-effort like `sendEmailSafely` — never throws) to
+  whoever's affected. Push requires the viewer to have opted in via the toggle on `/account`
+  (`components/push-toggle.tsx`), which registers `public/sw.js` and stores the subscription in
+  the `push_subscription` table; a subscription the push service reports as gone (endpoint
+  uninstalled, permission revoked, etc.) gets deleted automatically rather than retried forever.
 - **Maps**: `lib/geocode.ts` proxies Photon (komoot's free, OSM-based geocoder) through
   `app/api/geocode/*` route handlers. `components/location-picker.tsx` uses it for
   search-as-you-type plus a click-to-place map when creating a post. Chosen over Mapbox/Google's

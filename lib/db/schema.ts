@@ -143,6 +143,23 @@ export const messages = pgTable("message", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// One row per browser/device a user has enabled push notifications on
+// (someone using this on their phone and laptop both gets one each). Kept
+// separate from `users` rather than a single column since there's no cap
+// on how many endpoints one person can have.
+export const pushSubscriptions = pgTable("push_subscription", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // ---------------------------------------------------------------------------
 // Relations (used for query-builder joins in lib/db/queries.ts)
 // ---------------------------------------------------------------------------
@@ -151,6 +168,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   posts: many(posts),
   claims: many(claims),
   messages: many(messages),
+  pushSubscriptions: many(pushSubscriptions),
 }));
 
 export const postsRelations = relations(posts, ({ one, many }) => ({
@@ -170,4 +188,8 @@ export const claimsRelations = relations(claims, ({ one, many }) => ({
 export const messagesRelations = relations(messages, ({ one }) => ({
   claim: one(claims, { fields: [messages.claimId], references: [claims.id] }),
   sender: one(users, { fields: [messages.senderId], references: [users.id] }),
+}));
+
+export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one }) => ({
+  user: one(users, { fields: [pushSubscriptions.userId], references: [users.id] }),
 }));

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getUserProfile } from "@/lib/db/queries";
 import { ProfileForm } from "./profile-form";
+import { PushToggle } from "@/components/push-toggle";
 
 export default async function AccountPage({ searchParams }: PageProps<"/account">) {
   const session = await auth();
@@ -25,6 +26,11 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           : "This is what matched riders/drivers see once you confirm a ride together."}
       </p>
       <ProfileForm name={me?.name ?? ""} phone={me?.phone ?? ""} callbackUrl={callbackUrl} />
+      {!isOnboarding && (
+        <div className="mt-4">
+          <PushToggle />
+        </div>
+      )}
     </div>
   );
 }
