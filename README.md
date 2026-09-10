@@ -15,8 +15,8 @@ project, not a Pathao product.
 - [Auth.js](https://authjs.dev) (NextAuth v5) — passwordless email sign-in: a 6-digit code (plus a
   click-through link as a shortcut when it's opened on the same device)
 - [Resend](https://resend.com) + [React Email](https://react.email) for transactional email
-- [Leaflet](https://leafletjs.com) + OpenStreetMap tiles + [Nominatim](https://nominatim.org)
-  geocoding — no API key required
+- [Leaflet](https://leafletjs.com) + OpenStreetMap tiles + [Photon](https://photon.komoot.io)
+  geocoding — no API key or account required for either
 - Tailwind CSS
 
 ## Setup
@@ -100,10 +100,13 @@ project, not a Pathao product.
   viewer is the post's author or has an active claim on it before the phone column is even
   selected from the database. See that file's comments for the full rationale — don't add
   `phone` to any other query.
-- **Maps**: `lib/geocode.ts` proxies Nominatim (OpenStreetMap's geocoder) through
-  `app/api/geocode/*` route handlers, since Nominatim requires a descriptive `User-Agent` header
-  a browser `fetch()` can't set. `components/location-picker.tsx` uses it for search-as-you-type
-  plus a click-to-place map when creating a post.
+- **Maps**: `lib/geocode.ts` proxies Photon (komoot's free, OSM-based geocoder) through
+  `app/api/geocode/*` route handlers. `components/location-picker.tsx` uses it for
+  search-as-you-type plus a click-to-place map when creating a post. Chosen over Mapbox/Google's
+  geocoding APIs specifically because both now require a billing-enabled account (a card on
+  file) even for their free tiers — this app's whole design principle is no payment dependency
+  anywhere, so a genuinely free, no-signup geocoder is the fit even though its autocomplete
+  quality is a notch below those paid-signup options.
 
 ## Verifying changes locally
 
