@@ -27,7 +27,7 @@
   --accent-foreground: #ffffff;
   --ring: #000000;
   --danger: #e11900;
-  --radius: 0.75rem;
+  --radius: 0.125rem;
 }
 
 .dark {
@@ -66,9 +66,14 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-ring: var(--ring);
   --color-danger: var(--danger);
+  /* No additive offsets -- rounded-lg/xl/2xl all resolve to the same
+     near-flat value regardless of which one a given card happens to use
+     (most use rounded-xl/2xl, so the old "+0.25rem/+0.75rem on top of
+     --radius" formula meant zeroing --radius alone wouldn't actually
+     flatten them). */
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 0.25rem);
-  --radius-2xl: calc(var(--radius) + 0.75rem);
+  --radius-xl: var(--radius);
+  --radius-2xl: var(--radius);
   --font-sans: var(--font-inter);
 }
 
