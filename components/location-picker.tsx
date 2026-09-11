@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { LocateFixed } from "lucide-react";
 import type { GeocodeResult } from "@/lib/geocode";
 
 const LocationPickerMap = dynamic(() => import("@/components/location-picker-map"), {
@@ -37,43 +38,55 @@ export function LocationPicker({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [locating, setLocating] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
-    if (!useCurrentLocationAsDefault || !("geolocation" in navigator)) return;
-
-    let cancelled = false;
-
-    function locate() {
-      setLocating(true);
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          if (cancelled) return;
-          const { latitude, longitude } = pos.coords;
-          setCoords({ lat: latitude, lng: longitude });
-          try {
-            const res = await fetch(`/api/geocode/reverse?lat=${latitude}&lon=${longitude}`);
-            const data = await res.json();
-            if (!cancelled && data.displayName) setLabel(data.displayName);
-          } catch {
-            // Leave it blank for manual entry.
-          } finally {
-            if (!cancelled) setLocating(false);
-          }
-        },
-        () => {
-          // Denied/unavailable/timed out -- just leave the field for manual
-          // search or a pin drop, same as if this prop weren't set at all.
-          if (!cancelled) setLocating(false);
-        },
-        { enableHighAccuracy: true, timeout: 8000 }
-      );
-    }
-
-    locate();
+    mountedRef.current = true;
     return () => {
-      cancelled = true;
+      mountedRef.current = false;
     };
-  }, [useCurrentLocationAsDefault]);
+  }, []);
+
+  // Shared by the auto-default-on-mount effect below and the "locate me"
+  // button in the input, so both go through the same geolocation +
+  // reverse-geocode path.
+  function locateMe() {
+    if (!("geolocation" in navigator)) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        if (!mountedRef.current) return;
+        setCoords({ lat: latitude, lng: longitude });
+        try {
+          const res = await fetch(`/api/geocode/reverse?lat=${latitude}&lon=${longitude}`);
+          const data = await res.json();
+          if (mountedRef.current && data.displayName) setLabel(data.displayName);
+        } catch {
+          // Leave whatever label was already there.
+        } finally {
+          if (mountedRef.current) setLocating(false);
+        }
+      },
+      () => {
+        // Denied/unavailable/timed out -- just leave the field for manual
+        // search or a pin drop.
+        if (mountedRef.current) setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }
+
+  useEffect(() => {
+    if (!useCurrentLocationAsDefault) return;
+    // Deferred a tick so the (shared, setState-ing) locateMe call isn't a
+    // direct synchronous call from the effect body itself.
+    const id = setTimeout(locateMe, 0);
+    return () => clearTimeout(id);
+    // Mount-only -- re-running this if the prop somehow changed would
+    // overwrite whatever the user has since typed/picked.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleLabelChange(value: string) {
     setLabel(value);
@@ -135,12 +148,22 @@ export function LocationPicker({
           required
           autoComplete="off"
           aria-invalid={!!error}
-          className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 ${
+          className={`w-full rounded-lg border bg-background py-2 pl-3 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 ${
             error
               ? "border-danger focus:border-danger focus:ring-danger/30"
               : "border-border focus:border-primary focus:ring-ring/30"
           }`}
         />
+        <button
+          type="button"
+          onClick={locateMe}
+          disabled={locating}
+          aria-label="Use my current location"
+          title="Use my current location"
+          className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-primary disabled:opacity-50"
+        >
+          <LocateFixed className={`h-4 w-4 ${locating ? "animate-pulse" : ""}`} strokeWidth={2.25} />
+        </button>
         {showSuggestions && suggestions.length > 0 && (
           // z-[1100]: the map's own panes/controls (rendered just below in
           // this same component) go up to z-index 1000, which otherwise

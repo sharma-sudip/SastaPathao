@@ -4,45 +4,50 @@
    rather than Tailwind v4's OS-preference-only default. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Uber-inspired: near-monochrome black/white, one signature blue accent
+   (#276EF1 and its dark-mode tint are Uber's own brand blue/red) instead of
+   the green this app used to run. Buttons stay rounded-full (Tailwind
+   literal classes, untouched) since Uber's own UI does that too --
+   what changes here is color and the gradient/glow becoming flat. */
 :root {
-  --background: #f6f7f4;
-  --foreground: #101210;
+  --background: #ffffff;
+  --foreground: #0a0a0a;
   --card: #ffffff;
-  --card-foreground: #101210;
-  --muted: #edefe9;
-  --muted-foreground: #5c655f;
-  --border: #e2e5dd;
-  --primary: #15a24d;
-  --primary-hover: #0f8540;
+  --card-foreground: #0a0a0a;
+  --muted: #f2f2f2;
+  --muted-foreground: #6b6b6b;
+  --border: #e5e5e5;
+  --primary: #000000;
+  --primary-hover: #262626;
   --primary-foreground: #ffffff;
-  --gradient-from: #15a24d;
-  --gradient-to: #8fd424;
-  --accent: #2f6fed;
-  --accent-hover: #1e56d1;
+  --gradient-from: #000000;
+  --gradient-to: #262626;
+  --accent: #276ef1;
+  --accent-hover: #1f58c4;
   --accent-foreground: #ffffff;
-  --ring: #15a24d;
-  --danger: #dc2626;
-  --radius: 1rem;
+  --ring: #000000;
+  --danger: #e11900;
+  --radius: 0.75rem;
 }
 
 .dark {
-  --background: #0c0f0c;
-  --foreground: #f1f4ee;
-  --card: #161a15;
-  --card-foreground: #f1f4ee;
-  --muted: #1e2320;
-  --muted-foreground: #9aa39a;
-  --border: #272d26;
-  --primary: #3fe07f;
-  --primary-hover: #34c96f;
-  --primary-foreground: #04220f;
-  --gradient-from: #3fe07f;
-  --gradient-to: #d3f34e;
-  --accent: #5c8fff;
-  --accent-hover: #7ea3ff;
-  --accent-foreground: #04122f;
-  --ring: #3fe07f;
-  --danger: #f87171;
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #141414;
+  --card-foreground: #ffffff;
+  --muted: #1f1f1f;
+  --muted-foreground: #a6a6a6;
+  --border: #2b2b2b;
+  --primary: #ffffff;
+  --primary-hover: #d9d9d9;
+  --primary-foreground: #000000;
+  --gradient-from: #ffffff;
+  --gradient-to: #d9d9d9;
+  --accent: #5b91f5;
+  --accent-hover: #7ba4f7;
+  --accent-foreground: #000000;
+  --ring: #ffffff;
+  --danger: #ff6247;
 }
 
 @theme inline {
@@ -64,7 +69,7 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 0.25rem);
   --radius-2xl: calc(var(--radius) + 0.75rem);
-  --font-sans: var(--font-quicksand);
+  --font-sans: var(--font-inter);
 }
 
 body {
@@ -72,7 +77,9 @@ body {
   color: var(--foreground);
 }
 
-/* Vivid green -> lime gradient for hero/CTA surfaces. */
+/* Flat (Uber's UI has no vivid gradients) -- kept as a "gradient" class/var
+   pair since a lot of markup already references it, but --gradient-from/to
+   are now just two near-identical shades of the primary color. */
 .bg-gradient-primary {
   background-image: linear-gradient(135deg, var(--gradient-from), var(--gradient-to));
 }

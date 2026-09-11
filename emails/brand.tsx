@@ -1,12 +1,12 @@
 import { Body, Button, Container, Head, Heading, Html, Preview, Section, Text } from "@react-email/components";
 import type { ReactNode } from "react";
 
-// Shared chrome for every transactional email, matching the site's bold
-// dark-panel-plus-brand-green look (see components/splash.tsx) instead of
+// Shared chrome for every transactional email, matching the site's
+// black/white-plus-one-accent look (see components/splash.tsx) instead of
 // react-email's default plain white card. Email clients strip gradients and
 // most CSS unpredictably, so this sticks to solid colors + inline styles.
 const DARK = "#0b0c0a";
-const GREEN = "#15a24d";
+const ACCENT = "#276ef1";
 
 export function EmailShell({
   preview,
@@ -66,7 +66,7 @@ export function EmailButton({ href, children }: { href: string; children: ReactN
         display: "inline-block",
         marginTop: "8px",
         borderRadius: "8px",
-        backgroundColor: GREEN,
+        backgroundColor: ACCENT,
         padding: "14px 28px",
         fontSize: "14px",
         fontWeight: 800,
