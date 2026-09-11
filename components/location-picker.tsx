@@ -19,18 +19,61 @@ export function LocationPicker({
   labelText,
   placeholder,
   error,
+  useCurrentLocationAsDefault = false,
 }: {
   idPrefix: string;
   fieldName: string; // e.g. "origin" -> fields: origin, originLat, originLng
   labelText: string;
   placeholder: string;
   error?: string;
+  /** Pre-fills this field from the browser's geolocation on mount (silently
+   *  does nothing if permission is denied/unavailable -- search and the map
+   *  stay available either way, this is just a starting point). */
+  useCurrentLocationAsDefault?: boolean;
 }) {
   const [label, setLabel] = useState("");
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [suggestions, setSuggestions] = useState<GeocodeResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [locating, setLocating] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!useCurrentLocationAsDefault || !("geolocation" in navigator)) return;
+
+    let cancelled = false;
+
+    function locate() {
+      setLocating(true);
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          if (cancelled) return;
+          const { latitude, longitude } = pos.coords;
+          setCoords({ lat: latitude, lng: longitude });
+          try {
+            const res = await fetch(`/api/geocode/reverse?lat=${latitude}&lon=${longitude}`);
+            const data = await res.json();
+            if (!cancelled && data.displayName) setLabel(data.displayName);
+          } catch {
+            // Leave it blank for manual entry.
+          } finally {
+            if (!cancelled) setLocating(false);
+          }
+        },
+        () => {
+          // Denied/unavailable/timed out -- just leave the field for manual
+          // search or a pin drop, same as if this prop weren't set at all.
+          if (!cancelled) setLocating(false);
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
+
+    locate();
+    return () => {
+      cancelled = true;
+    };
+  }, [useCurrentLocationAsDefault]);
 
   function handleLabelChange(value: string) {
     setLabel(value);
@@ -88,7 +131,7 @@ export function LocationPicker({
           onChange={(e) => handleLabelChange(e.target.value)}
           onFocus={() => setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-          placeholder={placeholder}
+          placeholder={locating ? "Finding your location…" : placeholder}
           required
           autoComplete="off"
           aria-invalid={!!error}
@@ -119,8 +162,9 @@ export function LocationPicker({
       </div>
       {error && <p className="text-sm font-semibold text-danger">{error}</p>}
       <p className="text-xs text-muted-foreground">
-        Search above, or drop a pin on the map — use a nearby landmark or intersection rather than
-        your exact address.
+        {useCurrentLocationAsDefault
+          ? "Defaulted to your current location — search above or drop a pin on the map to use somewhere else."
+          : "Search above, or drop a pin on the map — use a nearby landmark or intersection rather than your exact address."}
       </p>
       <div className="overflow-hidden rounded-lg border border-border">
         <LocationPickerMap value={coords} onPick={handleMapPick} />

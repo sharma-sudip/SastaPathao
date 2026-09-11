@@ -58,3 +58,25 @@ export function parseEasternDatetimeLocal(naive: string): Date {
   const offsetMinutes = timeZoneOffsetMinutes(utcGuess, TIME_ZONE);
   return new Date(utcGuess.getTime() - offsetMinutes * 60_000);
 }
+
+const RELATIVE_DIVISIONS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ["year", 31536000],
+  ["month", 2592000],
+  ["week", 604800],
+  ["day", 86400],
+  ["hour", 3600],
+  ["minute", 60],
+];
+
+/** "5 minutes ago", "3 hours ago", etc. -- used by the notification bell. */
+export function formatRelativeTime(date: Date | string): string {
+  const diffSec = Math.round((new Date(date).getTime() - Date.now()) / 1000);
+  const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+
+  for (const [unit, secondsInUnit] of RELATIVE_DIVISIONS) {
+    if (Math.abs(diffSec) >= secondsInUnit) {
+      return rtf.format(Math.round(diffSec / secondsInUnit), unit);
+    }
+  }
+  return rtf.format(diffSec, "second");
+}

@@ -20,6 +20,7 @@ export function PostForm({
         labelText="Pickup location"
         placeholder="e.g. Boardman Plaza"
         error={fieldErrors?.origin}
+        useCurrentLocationAsDefault
       />
       <LocationPicker
         idPrefix="destination"

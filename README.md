@@ -103,16 +103,22 @@ project, not a Pathao product.
   selected from the database. See that file's comments for the full rationale — don't add
   `phone` to any other query.
 - **Notifications**: every claim-lifecycle event (new claim, confirmed, declined, withdrawn,
-  post cancelled) and every chat message sends both an email and a browser push notification
-  (`lib/push.ts`'s `sendPushSafely`, best-effort like `sendEmailSafely` — never throws) to
-  whoever's affected. Push requires the viewer to have opted in via the toggle on `/account`
-  (`components/push-toggle.tsx`), which registers `public/sw.js` and stores the subscription in
-  the `push_subscription` table; a subscription the push service reports as gone (endpoint
-  uninstalled, permission revoked, etc.) gets deleted automatically rather than retried forever.
+  post cancelled) and every chat message goes through `lib/notify.ts`'s `notifyUser` — which
+  writes a persistent row (the `notification` table, listed by the bell in `Nav`,
+  `components/notification-bell.tsx`, polling like `<ClaimChat>`) and fans out a browser push
+  notification, in parallel with that event's own email. Push requires the viewer to have opted
+  in via the toggle on `/account` (`components/push-toggle.tsx`), which registers `public/sw.js`
+  and stores the subscription in the `push_subscription` table; a subscription the push service
+  reports as gone (endpoint uninstalled, permission revoked, etc.) gets deleted automatically
+  rather than retried forever. Both `notifyUser` and email are best-effort — never throw, never
+  block the action that triggered them.
 - **Maps**: `lib/geocode.ts` proxies Photon (komoot's free, OSM-based geocoder) through
   `app/api/geocode/*` route handlers. `components/location-picker.tsx` uses it for
-  search-as-you-type plus a click-to-place map when creating a post. Chosen over Mapbox/Google's
-  geocoding APIs specifically because both now require a billing-enabled account (a card on
+  search-as-you-type plus a click-to-place map when creating a post; the pickup field also
+  defaults to the browser's geolocation on mount (`useCurrentLocationAsDefault`, reverse-geocoded
+  through the same endpoint) if permission is granted, but stays a normal editable/searchable
+  field either way. Chosen over Mapbox/Google's geocoding APIs specifically because both now
+  require a billing-enabled account (a card on
   file) even for their free tiers — this app's whole design principle is no payment dependency
   anywhere, so a genuinely free, no-signup geocoder is the fit even though its autocomplete
   quality is a notch below those paid-signup options.

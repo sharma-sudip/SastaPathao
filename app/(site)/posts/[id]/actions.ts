@@ -10,7 +10,7 @@ import { revealContactIfAuthorized } from "@/lib/contacts";
 import { getMessagesForClaim, sendMessage } from "@/lib/messages";
 import { claimFormSchema, messageFormSchema } from "@/lib/validation";
 import { sendEmailSafely, EMAIL_FROM } from "@/lib/resend";
-import { sendPushSafely } from "@/lib/push";
+import { notifyUser } from "@/lib/notify";
 import { NewClaimEmail } from "@/emails/new-claim-email";
 import { ClaimConfirmedEmail } from "@/emails/claim-confirmed-email";
 import { ClaimDeclinedEmail } from "@/emails/claim-declined-email";
@@ -60,7 +60,7 @@ export async function claimAction(postId: string, formData: FormData) {
           }),
         });
       }
-      await sendPushSafely(authorId, {
+      await notifyUser(authorId, {
         title: "Someone wants to fill your ride",
         body: `${session.user.name ?? "A neighbor"} offered for ${post.origin} → ${post.destination}`,
         url,
@@ -92,7 +92,7 @@ export async function withdrawAction(claimId: string, postId: string) {
           react: ClaimWithdrawnEmail({ postUrl: url, origin: post.origin, destination: post.destination }),
         });
       }
-      await sendPushSafely(result.authorId, {
+      await notifyUser(result.authorId, {
         title: "A volunteer backed out",
         body: `${post.origin} → ${post.destination} is back open`,
         url,
@@ -134,7 +134,7 @@ export async function confirmAction(claimId: string, postId: string) {
           }),
         });
       }
-      await sendPushSafely(result.claimantId, {
+      await notifyUser(result.claimantId, {
         title: "Your ride is confirmed 🎉",
         body: `${post.origin} → ${post.destination}`,
         url,
@@ -150,7 +150,7 @@ export async function confirmAction(claimId: string, postId: string) {
             react: ClaimDeclinedEmail({ postUrl: url, origin: post.origin, destination: post.destination }),
           });
         }
-        await sendPushSafely(declinedId, {
+        await notifyUser(declinedId, {
           title: "Your claim wasn't accepted this time",
           body: `${post.origin} → ${post.destination} went to someone else`,
           url,
@@ -184,7 +184,7 @@ export async function declineAction(claimId: string, postId: string) {
           react: ClaimDeclinedEmail({ postUrl: url, origin: post.origin, destination: post.destination }),
         });
       }
-      await sendPushSafely(result.claimantId, {
+      await notifyUser(result.claimantId, {
         title: "Your claim wasn't accepted this time",
         body: `${post.origin} → ${post.destination}`,
         url,
@@ -236,7 +236,7 @@ export async function sendMessageAction(claimId: string, body: string) {
           }),
         });
       }
-      await sendPushSafely(message.recipientId, {
+      await notifyUser(message.recipientId, {
         title: `${session.user.name ?? "Someone"} sent you a message`,
         body: parsed.data.body,
         url,
@@ -268,7 +268,7 @@ export async function cancelPostAction(postId: string) {
             react: ClaimDeclinedEmail({ postUrl: url, origin: post.origin, destination: post.destination }),
           });
         }
-        await sendPushSafely(claimantId, {
+        await notifyUser(claimantId, {
           title: "A ride you claimed was cancelled",
           body: `${post.origin} → ${post.destination}`,
           url,

@@ -3,6 +3,7 @@ import { Car } from "lucide-react";
 import { auth, signOut } from "@/auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileNavMenu } from "@/components/mobile-nav-menu";
+import { NotificationBell } from "@/components/notification-bell";
 
 export async function Nav() {
   const session = await auth();
@@ -31,6 +32,7 @@ export async function Nav() {
           </Link>
           {session?.user ? (
             <>
+              <NotificationBell />
               <Link
                 href="/dashboard"
                 className="rounded-full px-3 py-1.5 font-semibold text-foreground/80 transition hover:bg-muted hover:text-foreground"

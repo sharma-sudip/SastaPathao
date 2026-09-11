@@ -4,6 +4,7 @@ import {
   timestamp,
   integer,
   doublePrecision,
+  boolean,
   primaryKey,
   pgEnum,
 } from "drizzle-orm/pg-core";
@@ -160,6 +161,24 @@ export const pushSubscriptions = pgTable("push_subscription", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// A persistent, in-app record of the same events that trigger an email/push
+// (lib/notify.ts writes one alongside those) -- so the notification bell has
+// something to list even for someone who never opted into push and isn't
+// checking email right now.
+export const notifications = pgTable("notification", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  url: text("url"),
+  read: boolean("read").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // ---------------------------------------------------------------------------
 // Relations (used for query-builder joins in lib/db/queries.ts)
 // ---------------------------------------------------------------------------
@@ -169,6 +188,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   claims: many(claims),
   messages: many(messages),
   pushSubscriptions: many(pushSubscriptions),
+  notifications: many(notifications),
 }));
 
 export const postsRelations = relations(posts, ({ one, many }) => ({
@@ -192,4 +212,8 @@ export const messagesRelations = relations(messages, ({ one }) => ({
 
 export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one }) => ({
   user: one(users, { fields: [pushSubscriptions.userId], references: [users.id] }),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, { fields: [notifications.userId], references: [users.id] }),
 }));
