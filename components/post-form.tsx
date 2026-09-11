@@ -1,8 +1,21 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import dynamic from "next/dynamic";
 import { LocationPicker } from "@/components/location-picker";
 import type { PostActionState } from "@/lib/action-types";
+
+const DualLocationMap = dynamic(() => import("@/components/dual-location-map"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[280px] items-center justify-center rounded-lg border border-border bg-muted text-sm text-muted-foreground">
+      Loading map…
+    </div>
+  ),
+});
+
+type Point = { label: string; coords: { lat: number; lng: number } | null };
+const EMPTY_POINT: Point = { label: "", coords: null };
 
 export function PostForm({
   action,
@@ -12,6 +25,24 @@ export function PostForm({
   const [state, formAction, pending] = useActionState(action, undefined);
   const fieldErrors = state?.fieldErrors;
 
+  // Lifted out of <LocationPicker> so both fields can share one map below
+  // instead of each rendering its own -- see dual-location-map.tsx.
+  const [origin, setOrigin] = useState<Point>(EMPTY_POINT);
+  const [destination, setDestination] = useState<Point>(EMPTY_POINT);
+  const [activeField, setActiveField] = useState<"origin" | "destination">("origin");
+
+  async function handleMapPick(lat: number, lng: number) {
+    const setPoint = activeField === "origin" ? setOrigin : setDestination;
+    setPoint((p) => ({ ...p, coords: { lat, lng } }));
+    try {
+      const res = await fetch(`/api/geocode/reverse?lat=${lat}&lon=${lng}`);
+      const data = await res.json();
+      if (data.displayName) setPoint((p) => ({ ...p, label: data.displayName }));
+    } catch {
+      // Keep whatever label was already there.
+    }
+  }
+
   return (
     <form action={formAction} className="space-y-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
       <LocationPicker
@@ -20,6 +51,10 @@ export function PostForm({
         labelText="Pickup location"
         placeholder="e.g. Boardman Plaza"
         error={fieldErrors?.origin}
+        label={origin.label}
+        onLabelChange={(label) => setOrigin((o) => ({ ...o, label }))}
+        onCoordsChange={(coords) => setOrigin((o) => ({ ...o, coords }))}
+        onActivate={() => setActiveField("origin")}
         useCurrentLocationAsDefault
       />
       <LocationPicker
@@ -28,7 +63,27 @@ export function PostForm({
         labelText="Destination"
         placeholder="e.g. YSU campus"
         error={fieldErrors?.destination}
+        label={destination.label}
+        onLabelChange={(label) => setDestination((d) => ({ ...d, label }))}
+        onCoordsChange={(coords) => setDestination((d) => ({ ...d, coords }))}
+        onActivate={() => setActiveField("destination")}
       />
+
+      <div className="space-y-1">
+        <p className="text-xs text-muted-foreground">
+          Tap the map to drop a pin for whichever field you tapped last —{" "}
+          <span className="font-semibold text-foreground">{activeField === "origin" ? "pickup" : "destination"}</span>{" "}
+          right now.
+        </p>
+        <div className="overflow-hidden rounded-lg border border-border">
+          <DualLocationMap origin={origin.coords} destination={destination.coords} onPick={handleMapPick} />
+        </div>
+      </div>
+
+      <input type="hidden" name="originLat" value={origin.coords?.lat ?? ""} />
+      <input type="hidden" name="originLng" value={origin.coords?.lng ?? ""} />
+      <input type="hidden" name="destinationLat" value={destination.coords?.lat ?? ""} />
+      <input type="hidden" name="destinationLng" value={destination.coords?.lng ?? ""} />
 
       <div>
         <label htmlFor="departAt" className="block text-sm font-medium text-foreground">

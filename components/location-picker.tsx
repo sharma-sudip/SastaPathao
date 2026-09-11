@@ -1,39 +1,41 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import dynamic from "next/dynamic";
 import { LocateFixed } from "lucide-react";
 import type { GeocodeResult } from "@/lib/geocode";
 
-const LocationPickerMap = dynamic(() => import("@/components/location-picker-map"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-[240px] items-center justify-center rounded-lg border border-border bg-muted text-sm text-muted-foreground">
-      Loading map…
-    </div>
-  ),
-});
-
+// Controlled: label/coords live in the parent (post-form.tsx) so multiple
+// fields (pickup + destination) can share one map instead of each field
+// rendering its own. This component owns only its own transient UI state
+// (suggestions, geolocation-in-progress).
 export function LocationPicker({
   idPrefix,
   fieldName,
   labelText,
   placeholder,
   error,
+  label,
+  onLabelChange,
+  onCoordsChange,
+  onActivate,
   useCurrentLocationAsDefault = false,
 }: {
   idPrefix: string;
-  fieldName: string; // e.g. "origin" -> fields: origin, originLat, originLng
+  fieldName: string; // e.g. "origin" -> submitted as `origin`
   labelText: string;
   placeholder: string;
   error?: string;
+  label: string;
+  onLabelChange: (label: string) => void;
+  onCoordsChange: (coords: { lat: number; lng: number } | null) => void;
+  /** Tells the parent "the shared map's next click/pin should target me" --
+   *  fired on focus. */
+  onActivate?: () => void;
   /** Pre-fills this field from the browser's geolocation on mount (silently
    *  does nothing if permission is denied/unavailable -- search and the map
    *  stay available either way, this is just a starting point). */
   useCurrentLocationAsDefault?: boolean;
 }) {
-  const [label, setLabel] = useState("");
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [suggestions, setSuggestions] = useState<GeocodeResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [locating, setLocating] = useState(false);
@@ -48,8 +50,7 @@ export function LocationPicker({
   }, []);
 
   // Shared by the auto-default-on-mount effect below and the "locate me"
-  // button in the input, so both go through the same geolocation +
-  // reverse-geocode path.
+  // button in the input.
   function locateMe() {
     if (!("geolocation" in navigator)) return;
     setLocating(true);
@@ -57,11 +58,11 @@ export function LocationPicker({
       async (pos) => {
         const { latitude, longitude } = pos.coords;
         if (!mountedRef.current) return;
-        setCoords({ lat: latitude, lng: longitude });
+        onCoordsChange({ lat: latitude, lng: longitude });
         try {
           const res = await fetch(`/api/geocode/reverse?lat=${latitude}&lon=${longitude}`);
           const data = await res.json();
-          if (mountedRef.current && data.displayName) setLabel(data.displayName);
+          if (mountedRef.current && data.displayName) onLabelChange(data.displayName);
         } catch {
           // Leave whatever label was already there.
         } finally {
@@ -89,7 +90,7 @@ export function LocationPicker({
   }, []);
 
   function handleLabelChange(value: string) {
-    setLabel(value);
+    onLabelChange(value);
     setShowSuggestions(true);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (value.trim().length < 3) {
@@ -108,21 +109,10 @@ export function LocationPicker({
   }
 
   function selectSuggestion(s: GeocodeResult) {
-    setLabel(s.displayName);
-    setCoords({ lat: s.lat, lng: s.lon });
+    onLabelChange(s.displayName);
+    onCoordsChange({ lat: s.lat, lng: s.lon });
     setSuggestions([]);
     setShowSuggestions(false);
-  }
-
-  async function handleMapPick(lat: number, lng: number) {
-    setCoords({ lat, lng });
-    try {
-      const res = await fetch(`/api/geocode/reverse?lat=${lat}&lon=${lng}`);
-      const data = await res.json();
-      if (data.displayName) setLabel(data.displayName);
-    } catch {
-      // Keep whatever label was already typed.
-    }
   }
 
   useEffect(() => {
@@ -142,7 +132,10 @@ export function LocationPicker({
           name={fieldName}
           value={label}
           onChange={(e) => handleLabelChange(e.target.value)}
-          onFocus={() => setShowSuggestions(true)}
+          onFocus={() => {
+            setShowSuggestions(true);
+            onActivate?.();
+          }}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
           placeholder={locating ? "Finding your location…" : placeholder}
           required
@@ -184,16 +177,6 @@ export function LocationPicker({
         )}
       </div>
       {error && <p className="text-sm font-semibold text-danger">{error}</p>}
-      <p className="text-xs text-muted-foreground">
-        {useCurrentLocationAsDefault
-          ? "Defaulted to your current location — search above or drop a pin on the map to use somewhere else."
-          : "Search above, or drop a pin on the map — use a nearby landmark or intersection rather than your exact address."}
-      </p>
-      <div className="overflow-hidden rounded-lg border border-border">
-        <LocationPickerMap value={coords} onPick={handleMapPick} />
-      </div>
-      <input type="hidden" name={`${fieldName}Lat`} value={coords?.lat ?? ""} />
-      <input type="hidden" name={`${fieldName}Lng`} value={coords?.lng ?? ""} />
     </div>
   );
 }
