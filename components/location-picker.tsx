@@ -142,7 +142,7 @@ export function LocationPicker({
           }`}
         />
         {showSuggestions && suggestions.length > 0 && (
-          // z-[1100]: Leaflet's own panes/controls (rendered just below in
+          // z-[1100]: the map's own panes/controls (rendered just below in
           // this same component) go up to z-index 1000, which otherwise
           // paints over this dropdown despite it being later in the DOM.
           <ul className="absolute z-[1100] mt-1 w-full overflow-hidden rounded-lg border border-border bg-card shadow-lg">

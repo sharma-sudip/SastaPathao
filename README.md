@@ -17,8 +17,13 @@ project, not a Pathao product.
 - [Resend](https://resend.com) + [React Email](https://react.email) for transactional email
 - [Web Push](https://web.dev/push-notifications-overview/) (VAPID) for optional browser
   notifications — a self-generated keypair, not a third-party account/API key
-- [Leaflet](https://leafletjs.com) + OpenStreetMap tiles + [Photon](https://photon.komoot.io)
-  geocoding — no API key or account required for either
+- Maps: [Google Maps](https://mapsplatform.google.com) (`@vis.gl/react-google-maps`) for both
+  map tiles and address search — currently an evaluation (a free "Demo Key," no card, but
+  Google's own docs say it's daily-capped and not meant for production). Geocoding alone
+  (`lib/geocode.ts`) falls back to [Photon](https://photon.komoot.io), free/no-signup, if
+  `GOOGLE_MAPS_API_KEY` is unset — but the map *tiles* are Google-only right now (Leaflet was
+  removed); reverting to the previous Leaflet+Photon-only setup is a `git revert` away if this
+  doesn't get kept
 - Tailwind CSS
 
 ## Setup
@@ -36,32 +41,37 @@ project, not a Pathao product.
    free at [resend.com](https://resend.com) and grab an API key. Without this set, the app still
    runs: sign-in links and notifications are logged to the server console instead of emailed.
 
-4. **Configure environment variables**
+4. **Get a Google Maps key** — currently required for the map tiles to render at all (see the
+   Stack section above). Get a free "Demo Key" with no credit card at
+   [mapsplatform.google.com/maps-demo-key](https://mapsplatform.google.com/maps-demo-key/).
+
+5. **Configure environment variables**
 
    ```bash
    cp .env.example .env.local
    ```
 
-   Fill in `DATABASE_URL` (from Neon), `RESEND_API_KEY` and `EMAIL_FROM` (from Resend), and
-   generate an `AUTH_SECRET`:
+   Fill in `DATABASE_URL` (from Neon), `RESEND_API_KEY` and `EMAIL_FROM` (from Resend),
+   `GOOGLE_MAPS_API_KEY` and `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (same value, from the Demo Key
+   above), and generate an `AUTH_SECRET`:
 
    ```bash
    npx auth secret
    ```
 
-5. **Run the database migration**
+6. **Run the database migration**
 
    ```bash
    npm run db:migrate
    ```
 
-6. **(Optional) Seed sample data** for local testing:
+7. **(Optional) Seed sample data** for local testing:
 
    ```bash
    npm run db:seed
    ```
 
-7. **Start the dev server**
+8. **Start the dev server**
 
    ```bash
    npm run dev
@@ -112,16 +122,16 @@ project, not a Pathao product.
   reports as gone (endpoint uninstalled, permission revoked, etc.) gets deleted automatically
   rather than retried forever. Both `notifyUser` and email are best-effort — never throw, never
   block the action that triggered them.
-- **Maps**: `lib/geocode.ts` proxies Photon (komoot's free, OSM-based geocoder) through
+- **Maps**: `lib/geocode.ts` proxies either Google (Places Autocomplete + Geocoding) or Photon
+  (komoot's free, OSM-based geocoder), whichever `GOOGLE_MAPS_API_KEY` selects, through
   `app/api/geocode/*` route handlers. `components/location-picker.tsx` uses it for
   search-as-you-type plus a click-to-place map when creating a post; the pickup field also
   defaults to the browser's geolocation on mount (`useCurrentLocationAsDefault`, reverse-geocoded
   through the same endpoint) if permission is granted, but stays a normal editable/searchable
-  field either way. Chosen over Mapbox/Google's geocoding APIs specifically because both now
-  require a billing-enabled account (a card on
-  file) even for their free tiers — this app's whole design principle is no payment dependency
-  anywhere, so a genuinely free, no-signup geocoder is the fit even though its autocomplete
-  quality is a notch below those paid-signup options.
+  field either way. `components/location-picker-map.tsx`, `post-map.tsx`, and `feed-map.tsx` all
+  render Google Maps (`@vis.gl/react-google-maps`) directly — no Photon-equivalent fallback for
+  the map tiles themselves right now (Leaflet was removed). See the Stack section above for the
+  billing/evaluation caveat on the Google side.
 
 ## Verifying changes locally
 
