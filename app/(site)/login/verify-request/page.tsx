@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+
 export default async function VerifyRequestPage({
   searchParams,
 }: PageProps<"/login/verify-request">) {
@@ -9,6 +12,14 @@ export default async function VerifyRequestPage({
 
   return (
     <div className="mx-auto max-w-sm space-y-6">
+      <Link
+        href={`/login?${new URLSearchParams({ callbackUrl })}`}
+        className="inline-flex items-center gap-1 text-sm font-semibold text-muted-foreground transition hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
+        Back
+      </Link>
+
       <div className="rounded-xl border border-border bg-card p-8 text-center shadow-sm">
         <h1 className="mb-2 text-2xl font-bold text-foreground">Check your email</h1>
         <p className="text-muted-foreground">
@@ -17,9 +28,6 @@ export default async function VerifyRequestPage({
         </p>
       </div>
 
-      {/* Plain GET form straight to the same route the emailed link points
-          at -- typing the code does exactly what clicking the link does,
-          no extra server action needed. */}
       <form
         method="get"
         action="/api/auth/callback/resend"
@@ -51,6 +59,11 @@ export default async function VerifyRequestPage({
           Verify &amp; sign in
         </button>
       </form>
+
+      <p className="text-center text-xs text-muted-foreground">
+        Email works best with Gmail, Outlook, or iCloud addresses. Don&apos;t see it after a
+        minute or two? Check your spam/junk folder.
+      </p>
     </div>
   );
 }
