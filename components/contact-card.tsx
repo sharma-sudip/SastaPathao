@@ -6,8 +6,8 @@ export async function ContactCard({ postId, viewerId }: { postId: string; viewer
   if (!contact) return null;
 
   return (
-    <div className="rounded-xl border-2 border-primary/30 bg-primary/10 p-4">
-      <p className="text-sm font-bold text-primary">Contact</p>
+    <div className="rounded-xl border border-accent/30 bg-accent/10 p-4">
+      <p className="text-sm font-bold text-accent">Contact</p>
       <p className="mt-1 flex items-center gap-1.5 text-sm text-foreground">
         <User className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2.25} />
         {contact.name ?? "—"}

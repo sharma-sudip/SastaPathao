@@ -13,7 +13,7 @@ export function PostForm({
   const fieldErrors = state?.fieldErrors;
 
   return (
-    <form action={formAction} className="space-y-6 rounded-2xl border-2 border-border bg-card p-6 shadow-sm">
+    <form action={formAction} className="space-y-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
       <LocationPicker
         idPrefix="origin"
         fieldName="origin"

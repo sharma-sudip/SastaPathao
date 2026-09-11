@@ -23,7 +23,7 @@ export default async function VerifyRequestPage({
       <form
         method="get"
         action="/api/auth/callback/resend"
-        className="space-y-4 rounded-2xl border-2 border-border bg-card p-6 shadow-sm"
+        className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm"
       >
         <input type="hidden" name="email" value={email} />
         <input type="hidden" name="callbackUrl" value={callbackUrl} />

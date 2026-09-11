@@ -7,7 +7,7 @@ const ACTIVE_STATUSES = new Set(["PROPOSED", "CONFIRMED"]);
 
 const STATUS_STYLE: Record<string, string> = {
   PROPOSED: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-  CONFIRMED: "bg-primary/15 text-primary",
+  CONFIRMED: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
   DECLINED: "bg-muted text-muted-foreground",
   WITHDRAWN: "bg-muted text-muted-foreground",
 };
@@ -26,7 +26,7 @@ export function ClaimList({ post, viewerId }: { post: PostDetail; viewerId: stri
         {isAuthor ? "Claims on this post" : "Your claim"}
       </h2>
       {visibleClaims.map((claim) => (
-        <div key={claim.id} className="rounded-xl border-2 border-border bg-card p-3">
+        <div key={claim.id} className="rounded-xl border border-border bg-card p-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-bold text-card-foreground">
               {isAuthor ? claim.claimant?.name ?? "A neighbor" : "You"}
@@ -53,7 +53,7 @@ export function ClaimList({ post, viewerId }: { post: PostDetail; viewerId: stri
               <form action={declineAction.bind(null, claim.id, post.id)}>
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-1 rounded-full border-2 border-border px-3 py-1.5 text-xs font-bold text-foreground transition hover:bg-muted"
+                  className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-bold text-foreground transition hover:bg-muted"
                 >
                   <X className="h-3.5 w-3.5" strokeWidth={2.75} />
                   Decline
@@ -66,7 +66,7 @@ export function ClaimList({ post, viewerId }: { post: PostDetail; viewerId: stri
             <form action={withdrawAction.bind(null, claim.id, post.id)} className="mt-2">
               <button
                 type="submit"
-                className="rounded-full border-2 border-border px-3 py-1.5 text-xs font-bold text-foreground transition hover:bg-muted"
+                className="rounded-full border border-border px-3 py-1.5 text-xs font-bold text-foreground transition hover:bg-muted"
               >
                 Withdraw claim
               </button>

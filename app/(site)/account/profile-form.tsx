@@ -17,7 +17,7 @@ export function ProfileForm({
   const [state, action, pending] = useActionState(updateProfileAction, undefined);
 
   return (
-    <form action={action} className="space-y-4 rounded-2xl border-2 border-border bg-card p-6 shadow-sm">
+    <form action={action} className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
       {callbackUrl && <input type="hidden" name="callbackUrl" value={callbackUrl} />}
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-foreground">

@@ -9,7 +9,7 @@ import { PostCard } from "@/components/post-card";
 const FeedMap = dynamic(() => import("@/components/feed-map"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[500px] items-center justify-center rounded-xl border-2 border-border bg-card text-muted-foreground">
+    <div className="flex h-[500px] items-center justify-center rounded-xl border border-border bg-card text-muted-foreground">
       Loading map…
     </div>
   ),
@@ -20,7 +20,7 @@ export function FeedView({ posts }: { posts: OpenPost[] }) {
 
   return (
     <div>
-      <div className="mb-4 inline-flex rounded-full border-2 border-border bg-card p-1">
+      <div className="mb-4 inline-flex rounded-full border border-border bg-card p-1">
         {(
           [
             { key: "list", label: "List", icon: List },
@@ -43,7 +43,7 @@ export function FeedView({ posts }: { posts: OpenPost[] }) {
       </div>
 
       {posts.length === 0 ? (
-        <div className="rounded-xl border-2 border-dashed border-border bg-card p-10 text-center">
+        <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
           <Compass className="mx-auto h-8 w-8 text-muted-foreground" strokeWidth={1.75} />
           <p className="mt-3 text-muted-foreground">
             No open ride requests right now.{" "}
@@ -62,7 +62,7 @@ export function FeedView({ posts }: { posts: OpenPost[] }) {
           ))}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border-2 border-border">
+        <div className="overflow-hidden rounded-xl border border-border">
           <FeedMap posts={posts} />
         </div>
       )}

@@ -25,7 +25,7 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div className="rounded-2xl border-2 border-border bg-card p-6 shadow-sm">
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-muted-foreground">
           <Hand className="h-3.5 w-3.5" strokeWidth={2.5} />
           Ride request · {post.status}
@@ -38,7 +38,7 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
       </div>
 
       {post.notes && (
-        <p className="rounded-xl border-2 border-border bg-card p-4 text-card-foreground">{post.notes}</p>
+        <p className="rounded-xl border border-border bg-card p-4 text-card-foreground">{post.notes}</p>
       )}
 
       {post.originLat != null && post.originLng != null && (
@@ -59,7 +59,7 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
       {canClaim && (
         <form
           action={claimAction.bind(null, post.id)}
-          className="space-y-2 rounded-xl border-2 border-border bg-card p-4 shadow-sm"
+          className="space-y-2 rounded-xl border border-border bg-card p-4 shadow-sm"
         >
           <label htmlFor="message" className="block text-sm font-medium text-foreground">
             Offer to give this ride
@@ -81,7 +81,7 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
       )}
 
       {!viewerId && isOpenForClaims && (
-        <p className="rounded-xl border-2 border-dashed border-border bg-card p-4 text-sm text-muted-foreground">
+        <p className="rounded-xl border border-dashed border-border bg-card p-4 text-sm text-muted-foreground">
           <Link href={`/login?callbackUrl=/posts/${post.id}`} className="font-bold text-primary underline underline-offset-2">
             Sign in
           </Link>{" "}

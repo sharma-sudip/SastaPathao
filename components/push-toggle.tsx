@@ -81,7 +81,7 @@ export function PushToggle() {
 
   if (status === "unsupported") {
     return (
-      <div className="rounded-2xl border-2 border-border bg-card p-4 shadow-sm">
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
         <p className="text-sm font-bold text-card-foreground">Browser notifications</p>
         <p className="text-xs text-muted-foreground">
           Not supported by this browser. Some mobile browsers (e.g. Samsung Internet) don&apos;t
@@ -92,7 +92,7 @@ export function PushToggle() {
   }
 
   return (
-    <div className="rounded-2xl border-2 border-border bg-card p-4 shadow-sm">
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-bold text-card-foreground">Browser notifications</p>
@@ -108,7 +108,7 @@ export function PushToggle() {
             onClick={status === "on" ? disable : enable}
             className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition ${
               status === "on"
-                ? "border-2 border-border text-foreground hover:bg-muted"
+                ? "border border-border text-foreground hover:bg-muted"
                 : "bg-gradient-primary text-primary-foreground shadow-sm hover:shadow-glow"
             }`}
           >

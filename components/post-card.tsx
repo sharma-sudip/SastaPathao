@@ -7,7 +7,7 @@ export function PostCard({ post }: { post: OpenPost }) {
   return (
     <Link
       href={`/posts/${post.id}`}
-      className="block rounded-xl border-2 border-border bg-card p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:shadow-glow"
+      className="block rounded-xl border border-border bg-card p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:shadow-glow"
     >
       <div className="flex items-start justify-between gap-3">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-0.5 text-xs font-bold text-accent">

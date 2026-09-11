@@ -6,10 +6,10 @@ import { getUserPosts, getUserClaims } from "@/lib/db/queries";
 const STATUS_STYLE: Record<string, string> = {
   OPEN: "bg-accent/15 text-accent",
   PENDING: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-  FILLED: "bg-primary/15 text-primary",
+  FILLED: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
   CANCELLED: "bg-muted text-muted-foreground",
   PROPOSED: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-  CONFIRMED: "bg-primary/15 text-primary",
+  CONFIRMED: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
   DECLINED: "bg-muted text-muted-foreground",
   WITHDRAWN: "bg-muted text-muted-foreground",
 };
@@ -42,7 +42,7 @@ export default async function DashboardPage() {
               <Link
                 key={post.id}
                 href={`/posts/${post.id}`}
-                className="flex items-center justify-between rounded-xl border-2 border-border bg-card p-3 shadow-sm transition hover:border-primary"
+                className="flex items-center justify-between rounded-xl border border-border bg-card p-3 shadow-sm transition hover:border-primary"
               >
                 <span className="text-sm text-card-foreground">
                   {post.origin} → {post.destination}
@@ -68,7 +68,7 @@ export default async function DashboardPage() {
               <Link
                 key={claim.id}
                 href={`/posts/${claim.post.id}`}
-                className="flex items-center justify-between rounded-xl border-2 border-border bg-card p-3 shadow-sm transition hover:border-primary"
+                className="flex items-center justify-between rounded-xl border border-border bg-card p-3 shadow-sm transition hover:border-primary"
               >
                 <span className="text-sm text-card-foreground">
                   {claim.post.origin} → {claim.post.destination}
