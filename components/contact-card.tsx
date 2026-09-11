@@ -1,5 +1,6 @@
-import { Phone, User } from "lucide-react";
+import { User } from "lucide-react";
 import { revealContactIfAuthorized } from "@/lib/contacts";
+import { PhoneNumber } from "@/components/phone-number";
 
 export async function ContactCard({ postId, viewerId }: { postId: string; viewerId: string | undefined }) {
   const contact = await revealContactIfAuthorized(postId, viewerId);
@@ -13,10 +14,7 @@ export async function ContactCard({ postId, viewerId }: { postId: string; viewer
         {contact.name ?? "—"}
       </p>
       {contact.phone ? (
-        <p className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold text-foreground">
-          <Phone className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2.25} />
-          {contact.phone}
-        </p>
+        <PhoneNumber phone={contact.phone} />
       ) : (
         <p className="mt-0.5 text-sm text-muted-foreground">
           No phone number on file yet — reply by email to coordinate.

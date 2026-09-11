@@ -1,4 +1,4 @@
-import { Text } from "@react-email/components";
+import { Link, Text } from "@react-email/components";
 import { EmailButton, EmailShell } from "./brand";
 
 export function ClaimConfirmedEmail({
@@ -25,7 +25,16 @@ export function ClaimConfirmedEmail({
       {counterpartName || counterpartPhone ? (
         <Text style={{ color: "#3a3f3a", fontSize: "15px" }}>
           Contact: <strong>{counterpartName ?? "—"}</strong>
-          {counterpartPhone ? ` — ${counterpartPhone}` : ""}
+          {counterpartPhone ? (
+            <>
+              {" — "}
+              <Link href={`tel:${counterpartPhone.replace(/[^\d+]/g, "")}`} style={{ color: "#276ef1" }}>
+                {counterpartPhone}
+              </Link>
+            </>
+          ) : (
+            ""
+          )}
         </Text>
       ) : null}
       <Text style={{ color: "#8a938a", fontSize: "13px" }}>
