@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 const MIN_SCALE = 1;
@@ -102,7 +103,12 @@ export function PhotoLightbox({ src, alt, onClose }: { src: string; alt: string;
     setScale((s) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, s - e.deltaY * 0.01)));
   }
 
-  return (
+  // Portaled straight to <body> -- rendered inline, `fixed` here would
+  // position relative to the nearest ancestor with a `filter`/
+  // `backdrop-filter`/`transform` (the nav's own blurred header has one)
+  // instead of the viewport, which is what made this render clipped to a
+  // sliver of the screen when opened from an avatar inside that header.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex touch-none items-center justify-center bg-black/90"
       onClick={() => scale === 1 && onClose()}
@@ -134,6 +140,7 @@ export function PhotoLightbox({ src, alt, onClose }: { src: string; alt: string;
         }}
         className="max-h-[85vh] max-w-[90vw] touch-none select-none rounded-lg object-contain"
       />
-    </div>
+    </div>,
+    document.body
   );
 }
