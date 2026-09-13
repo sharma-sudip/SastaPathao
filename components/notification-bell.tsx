@@ -67,7 +67,13 @@ export function NotificationBell() {
   }
 
   return (
-    <div ref={ref} className="relative">
+    // No `relative` here on purpose -- the dropdown below anchors to <nav>
+    // in components/nav.tsx (which has it) instead of to this button alone,
+    // so `right-0` means the actual right edge of the header. Anchoring to
+    // just this small wrapper put the panel's right edge whereever the bell
+    // happens to sit, which on mobile (My rides / sign out / theme toggle
+    // all to its right) pushed the panel's left side off-screen.
+    <div ref={ref}>
       <button
         type="button"
         onClick={toggleOpen}
