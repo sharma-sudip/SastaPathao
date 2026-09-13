@@ -91,6 +91,8 @@ project, not a Pathao product.
 | `npm run db:migrate`  | Apply pending migrations to `DATABASE_URL`                 |
 | `npm run db:studio`   | Open Drizzle Studio (visual browser for the database)      |
 | `npm run db:seed`     | Insert a couple of sample users/posts for local testing    |
+| `npm run db:ban -- <email> [reason]` | Ban a user by email: blocks future sign-in, revokes any active session, cancels their open posts and declines their pending claims |
+| `npm run db:unban -- <email>` | Lift a ban |
 
 ## How it works
 

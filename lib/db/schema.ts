@@ -27,6 +27,12 @@ export const users = pgTable("user", {
   // see lib/contacts.ts for the one place it's allowed to be read.
   phone: text("phone"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  // Set by lib/db/ban-user.ts. Non-null blocks all future sign-in (see the
+  // `signIn` callback in auth.ts) — banning also revokes any session the
+  // user currently holds, so this alone is enough to cut off access; no
+  // other query needs to check it.
+  bannedAt: timestamp("banned_at"),
+  banReason: text("ban_reason"),
 });
 
 export const accounts = pgTable(

@@ -87,6 +87,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     newUser: "/account",
   },
   callbacks: {
+    signIn({ user }) {
+      // Banned accounts (lib/db/ban-user.ts sets `bannedAt`) can't complete
+      // sign-in -- they're sent to the `error` page below. A brand-new
+      // account is never banned, so this only ever blocks existing users.
+      // Anyone already signed in when banned is cut off separately, since
+      // ban-user.ts also deletes their session rows.
+      if (user.bannedAt) return false;
+      return true;
+    },
     session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;
