@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { APIProvider, Map, AdvancedMarker, InfoWindow } from "@vis.gl/react-google-maps";
-
-const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
+import { useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { ensureDefaultMarkerIcon } from "@/lib/leaflet-icon-fix";
 
 export default function PostMap({
   origin,
@@ -12,38 +11,33 @@ export default function PostMap({
   origin: { lat: number; lng: number; label: string };
   destination: { lat: number; lng: number; label: string } | null;
 }) {
-  const [open, setOpen] = useState<"origin" | "destination" | null>(null);
+  useEffect(() => {
+    ensureDefaultMarkerIcon();
+  }, []);
 
-  const center = destination
-    ? { lat: (origin.lat + destination.lat) / 2, lng: (origin.lng + destination.lng) / 2 }
-    : { lat: origin.lat, lng: origin.lng };
+  const points: [number, number][] = destination
+    ? [
+        [origin.lat, origin.lng],
+        [destination.lat, destination.lng],
+      ]
+    : [[origin.lat, origin.lng]];
+
+  const center = points[0];
 
   return (
-    <APIProvider apiKey={API_KEY}>
-      <Map
-        style={{ height: "260px", width: "100%" }}
-        defaultCenter={center}
-        defaultZoom={destination ? 11 : 13}
-        mapId="DEMO_MAP_ID"
-        gestureHandling="greedy"
-      >
-        <AdvancedMarker position={origin} onClick={() => setOpen("origin")} />
-        {open === "origin" && (
-          <InfoWindow position={origin} onCloseClick={() => setOpen(null)}>
-            Pickup: {origin.label}
-          </InfoWindow>
-        )}
-        {destination && (
-          <>
-            <AdvancedMarker position={destination} onClick={() => setOpen("destination")} />
-            {open === "destination" && (
-              <InfoWindow position={destination} onCloseClick={() => setOpen(null)}>
-                Destination: {destination.label}
-              </InfoWindow>
-            )}
-          </>
-        )}
-      </Map>
-    </APIProvider>
+    <MapContainer center={center} zoom={destination ? 11 : 13} style={{ height: "260px", width: "100%" }}>
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      <Marker position={[origin.lat, origin.lng]}>
+        <Popup>Pickup: {origin.label}</Popup>
+      </Marker>
+      {destination && (
+        <Marker position={[destination.lat, destination.lng]}>
+          <Popup>Destination: {destination.label}</Popup>
+        </Marker>
+      )}
+    </MapContainer>
   );
 }

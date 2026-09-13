@@ -17,13 +17,12 @@ project, not a Pathao product.
 - [Resend](https://resend.com) + [React Email](https://react.email) for transactional email
 - [Web Push](https://web.dev/push-notifications-overview/) (VAPID) for optional browser
   notifications — a self-generated keypair, not a third-party account/API key
-- Maps: [Google Maps](https://mapsplatform.google.com) (`@vis.gl/react-google-maps`) for both
-  map tiles and address search — currently an evaluation (a free "Demo Key," no card, but
-  Google's own docs say it's daily-capped and not meant for production). Geocoding alone
-  (`lib/geocode.ts`) falls back to [Photon](https://photon.komoot.io), free/no-signup, if
-  `GOOGLE_MAPS_API_KEY` is unset — but the map *tiles* are Google-only right now (Leaflet was
-  removed); reverting to the previous Leaflet+Photon-only setup is a `git revert` away if this
-  doesn't get kept
+- Maps: [Leaflet](https://leafletjs.com) + OpenStreetMap tiles, free/no API key. Address
+  search/geocoding (`lib/geocode.ts`) uses [Photon](https://photon.komoot.io) (free, no signup)
+  by default, or Google's Places/Geocoding APIs if `GOOGLE_MAPS_API_KEY` is set (better
+  autocomplete quality). Google Maps' own JS SDK briefly stood in for the map *tiles* too (see
+  git history) but was reverted — its free "Demo Key" throws uncaught errors once its daily quota
+  is hit, badly enough to crash the whole page for a visitor, not just the map
 - [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) for profile picture uploads
 - Tailwind CSS
 
@@ -42,9 +41,9 @@ project, not a Pathao product.
    free at [resend.com](https://resend.com) and grab an API key. Without this set, the app still
    runs: sign-in links and notifications are logged to the server console instead of emailed.
 
-4. **Get a Google Maps key** — currently required for the map tiles to render at all (see the
-   Stack section above). Get a free "Demo Key" with no credit card at
-   [mapsplatform.google.com/maps-demo-key](https://mapsplatform.google.com/maps-demo-key/).
+4. **(Optional) Get a Google Maps key** — only improves address search/autocomplete quality
+   (Photon is the free, no-signup default). Map tiles don't use this at all — see the Stack
+   section above.
 
 5. **(Optional) Create a Vercel Blob store** — for profile picture uploads. In your Vercel
    project's Storage tab, create a free Blob store; it injects `BLOB_READ_WRITE_TOKEN`
@@ -59,8 +58,8 @@ project, not a Pathao product.
    ```
 
    Fill in `DATABASE_URL` (from Neon), `RESEND_API_KEY` and `EMAIL_FROM` (from Resend),
-   `GOOGLE_MAPS_API_KEY` and `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (same value, from the Demo Key
-   above), `BLOB_READ_WRITE_TOKEN` (from the Blob store above), and generate an `AUTH_SECRET`:
+   optionally `GOOGLE_MAPS_API_KEY` (from above), `BLOB_READ_WRITE_TOKEN` (from the Blob store
+   above), and generate an `AUTH_SECRET`:
 
    ```bash
    npx auth secret
@@ -139,13 +138,12 @@ project, not a Pathao product.
 - **Maps**: `lib/geocode.ts` proxies either Google (Places Autocomplete + Geocoding) or Photon
   (komoot's free, OSM-based geocoder), whichever `GOOGLE_MAPS_API_KEY` selects, through
   `app/api/geocode/*` route handlers. `components/location-picker.tsx` uses it for
-  search-as-you-type plus a click-to-place map when creating a post; the pickup field also
-  defaults to the browser's geolocation on mount (`useCurrentLocationAsDefault`, reverse-geocoded
-  through the same endpoint) if permission is granted, but stays a normal editable/searchable
-  field either way. `components/location-picker-map.tsx`, `post-map.tsx`, and `feed-map.tsx` all
-  render Google Maps (`@vis.gl/react-google-maps`) directly — no Photon-equivalent fallback for
-  the map tiles themselves right now (Leaflet was removed). See the Stack section above for the
-  billing/evaluation caveat on the Google side.
+  search-as-you-type; the pickup field also defaults to the browser's geolocation on mount
+  (`useCurrentLocationAsDefault`, reverse-geocoded through the same endpoint) if permission is
+  granted, but stays a normal editable/searchable field either way. Map *tiles*
+  (`dual-location-map.tsx`, `post-map.tsx`, `feed-map.tsx`) are always Leaflet + OpenStreetMap,
+  regardless of that key — see the Stack section above for why Google's own Maps JS SDK isn't
+  used for tiles.
 
 ## Verifying changes locally
 
