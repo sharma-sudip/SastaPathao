@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Hand } from "lucide-react";
 import type { OpenPost } from "@/lib/db/queries";
 import { formatDepartAt } from "@/lib/format-date";
+import { Avatar } from "@/components/avatar";
 
 export function PostCard({ post }: { post: OpenPost }) {
   return (
@@ -22,7 +23,10 @@ export function PostCard({ post }: { post: OpenPost }) {
       </p>
 
       <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground">
-        <span>{post.author?.name ?? "A neighbor"}</span>
+        <span className="flex items-center gap-1.5">
+          <Avatar src={post.author?.image} name={post.author?.name} />
+          {post.author?.name ?? "A neighbor"}
+        </span>
         {post.status === "PENDING" && (
           <span className="font-bold text-amber-600 dark:text-amber-400">Pending match</span>
         )}

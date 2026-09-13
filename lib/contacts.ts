@@ -17,7 +17,7 @@ import { posts, claims, users } from "@/lib/db/schema";
 export async function revealContactIfAuthorized(
   postId: string,
   viewerId: string | undefined
-): Promise<{ name: string | null; phone: string | null } | null> {
+): Promise<{ name: string | null; phone: string | null; image: string | null } | null> {
   if (!viewerId) return null;
 
   const post = await db.query.posts.findFirst({
@@ -53,7 +53,7 @@ export async function revealContactIfAuthorized(
   if (!targetUserId) return null;
 
   const [contact] = await db
-    .select({ name: users.name, phone: users.phone })
+    .select({ name: users.name, phone: users.phone, image: users.image })
     .from(users)
     .where(eq(users.id, targetUserId))
     .limit(1);

@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { getPostById } from "@/lib/db/queries";
 import { formatDepartAt } from "@/lib/format-date";
 import { directionsUrl } from "@/lib/maps-url";
+import { Avatar } from "@/components/avatar";
 import { ContactCard } from "@/components/contact-card";
 import { ClaimList } from "@/components/claim-list";
 import { PostMapSection } from "@/components/post-map-section";
@@ -35,7 +36,10 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
           {post.origin} <span className="text-muted-foreground">→</span> {post.destination}
         </h1>
         <p className="mt-1 text-muted-foreground">{formatDepartAt(post.departAt, "long")}</p>
-        <p className="mt-1 text-sm text-muted-foreground">Posted by {post.author?.name ?? "A neighbor"}</p>
+        <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Avatar src={post.author?.image} name={post.author?.name} />
+          Posted by {post.author?.name ?? "A neighbor"}
+        </p>
         <a
           href={directionsUrl(
             { label: post.origin, lat: post.originLat, lng: post.originLng },

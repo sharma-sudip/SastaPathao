@@ -24,6 +24,7 @@ project, not a Pathao product.
   `GOOGLE_MAPS_API_KEY` is unset — but the map *tiles* are Google-only right now (Leaflet was
   removed); reverting to the previous Leaflet+Photon-only setup is a `git revert` away if this
   doesn't get kept
+- [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) for profile picture uploads
 - Tailwind CSS
 
 ## Setup
@@ -45,7 +46,13 @@ project, not a Pathao product.
    Stack section above). Get a free "Demo Key" with no credit card at
    [mapsplatform.google.com/maps-demo-key](https://mapsplatform.google.com/maps-demo-key/).
 
-5. **Configure environment variables**
+5. **(Optional) Create a Vercel Blob store** — for profile picture uploads. In your Vercel
+   project's Storage tab, create a free Blob store; it injects `BLOB_READ_WRITE_TOKEN`
+   automatically once deployed. For local dev, copy the token it shows you, or run
+   `vercel env pull .env.local` once the project's linked. Without it, uploading a photo just
+   errors — everything else in the app still works.
+
+6. **Configure environment variables**
 
    ```bash
    cp .env.example .env.local
@@ -53,25 +60,25 @@ project, not a Pathao product.
 
    Fill in `DATABASE_URL` (from Neon), `RESEND_API_KEY` and `EMAIL_FROM` (from Resend),
    `GOOGLE_MAPS_API_KEY` and `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (same value, from the Demo Key
-   above), and generate an `AUTH_SECRET`:
+   above), `BLOB_READ_WRITE_TOKEN` (from the Blob store above), and generate an `AUTH_SECRET`:
 
    ```bash
    npx auth secret
    ```
 
-6. **Run the database migration**
+7. **Run the database migration**
 
    ```bash
    npm run db:migrate
    ```
 
-7. **(Optional) Seed sample data** for local testing:
+8. **(Optional) Seed sample data** for local testing:
 
    ```bash
    npm run db:seed
    ```
 
-8. **Start the dev server**
+9. **Start the dev server**
 
    ```bash
    npm run dev
@@ -114,6 +121,11 @@ project, not a Pathao product.
   viewer is the post's author or has an active claim on it before the phone column is even
   selected from the database. See that file's comments for the full rationale — don't add
   `phone` to any other query.
+- **Profile pictures**: uploaded on `/account` (`photo-upload-form.tsx` + `photo-actions.ts`),
+  stored via Vercel Blob (`BLOB_READ_WRITE_TOKEN`), and written to the standard Auth.js `image`
+  column — so no migration was needed to add this. `components/avatar.tsx` renders it wherever a
+  name shows (board cards, post detail, claims, the revealed contact card), falling back to a
+  first initial or a generic icon for anyone who hasn't uploaded one.
 - **Notifications**: every claim-lifecycle event (new claim, confirmed, declined, withdrawn,
   post cancelled) and every chat message goes through `lib/notify.ts`'s `notifyUser` — which
   writes a persistent row (the `notification` table, listed by the bell in `Nav`,

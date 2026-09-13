@@ -12,7 +12,7 @@ import { posts, claims, users } from "@/lib/db/schema";
 // keep leaving `phone` out. See CLAUDE.md / the project plan for the full
 // rationale.
 
-const AUTHOR_COLUMNS = { id: true, name: true } as const;
+const AUTHOR_COLUMNS = { id: true, name: true, image: true } as const;
 const CLAIM_COLUMNS = {
   id: true,
   status: true,
@@ -21,7 +21,7 @@ const CLAIM_COLUMNS = {
   createdAt: true,
   respondedAt: true,
 } as const;
-const CLAIMANT_COLUMNS = { id: true, name: true } as const;
+const CLAIMANT_COLUMNS = { id: true, name: true, image: true } as const;
 
 /** Feed: open/pending posts, soonest departure first. Public -- no auth. */
 export async function getOpenPosts() {
@@ -87,7 +87,7 @@ export async function getUserClaims(userId: string) {
  */
 export async function getUserProfile(userId: string) {
   const [row] = await db
-    .select({ name: users.name, phone: users.phone })
+    .select({ name: users.name, phone: users.phone, image: users.image })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);

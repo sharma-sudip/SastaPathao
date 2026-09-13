@@ -6,3 +6,4 @@ export type PostActionState =
   | undefined;
 export type ClaimActionState = { error?: string; success?: string } | undefined;
 export type ProfileActionState = { error?: string; success?: boolean } | undefined;
+export type PhotoActionState = { error?: string; success?: boolean } | undefined;

@@ -2,6 +2,7 @@ import { Check, X } from "lucide-react";
 import type { PostDetail } from "@/lib/db/queries";
 import { confirmAction, declineAction, withdrawAction } from "@/app/(site)/posts/[id]/actions";
 import { ClaimChat } from "@/components/claim-chat";
+import { Avatar } from "@/components/avatar";
 
 const ACTIVE_STATUSES = new Set(["PROPOSED", "CONFIRMED"]);
 
@@ -28,7 +29,8 @@ export function ClaimList({ post, viewerId }: { post: PostDetail; viewerId: stri
       {visibleClaims.map((claim) => (
         <div key={claim.id} className="rounded-xl border border-border bg-card p-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-bold text-card-foreground">
+            <span className="flex items-center gap-1.5 text-sm font-bold text-card-foreground">
+              {isAuthor && <Avatar src={claim.claimant?.image} name={claim.claimant?.name} />}
               {isAuthor ? claim.claimant?.name ?? "A neighbor" : "You"}
             </span>
             <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${STATUS_STYLE[claim.status]}`}>

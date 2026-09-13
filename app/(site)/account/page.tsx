@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getUserProfile } from "@/lib/db/queries";
 import { ProfileForm } from "./profile-form";
+import { PhotoUploadForm } from "./photo-upload-form";
 import { PushToggle } from "@/components/push-toggle";
 
 export default async function AccountPage({ searchParams }: PageProps<"/account">) {
@@ -25,6 +26,9 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           ? "Add your name and number so a matched rider/driver can actually reach you."
           : "This is what matched riders/drivers see once you confirm a ride together."}
       </p>
+      <div className="mb-4">
+        <PhotoUploadForm name={me?.name ?? ""} image={me?.image ?? null} />
+      </div>
       <ProfileForm
         email={session.user.email ?? ""}
         name={me?.name ?? ""}

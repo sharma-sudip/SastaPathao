@@ -5,6 +5,7 @@ import { isAdminEmail } from "@/lib/admin";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileNavMenu } from "@/components/mobile-nav-menu";
 import { NotificationBell } from "@/components/notification-bell";
+import { Avatar } from "@/components/avatar";
 
 export async function Nav() {
   const session = await auth();
@@ -18,7 +19,7 @@ export async function Nav() {
           </span>
           Sasta Pathao
         </Link>
-        <nav className="flex items-center gap-1 text-sm sm:gap-2">
+        <nav className="relative flex items-center gap-1 text-sm sm:gap-2">
           <Link
             href="/requests/new"
             className="hidden rounded-full px-3 py-1.5 font-semibold text-foreground/80 transition hover:bg-muted hover:text-foreground sm:inline-block"
@@ -42,8 +43,9 @@ export async function Nav() {
               </Link>
               <Link
                 href="/account"
-                className="hidden rounded-full px-3 py-1.5 font-semibold text-foreground/80 transition hover:bg-muted hover:text-foreground sm:inline-block"
+                className="hidden items-center gap-1.5 rounded-full px-3 py-1.5 font-semibold text-foreground/80 transition hover:bg-muted hover:text-foreground sm:inline-flex"
               >
+                <Avatar src={session.user.image} name={session.user.name} />
                 Profile
               </Link>
               {isAdminEmail(session.user.email) && (
