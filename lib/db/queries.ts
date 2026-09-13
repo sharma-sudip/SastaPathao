@@ -98,6 +98,21 @@ export function isProfileComplete(profile: { name: string | null; phone: string 
   return !!profile?.name?.trim() && !!profile?.phone?.trim();
 }
 
+/** Every user, newest first -- for the /admin page. Never selects `phone`. */
+export async function listUsersForAdmin() {
+  return db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      createdAt: users.createdAt,
+      bannedAt: users.bannedAt,
+      banReason: users.banReason,
+    })
+    .from(users)
+    .orderBy(desc(users.createdAt));
+}
+
 export async function getActiveClaimForUser(postId: string, userId: string) {
   return db.query.claims.findFirst({
     where: and(
