@@ -78,7 +78,19 @@ export function PushToggle() {
       // here (bad key format, the browser rejecting the subscription, etc.)
       // used to leave the button looking like it just didn't respond.
       console.error("Failed to enable push notifications:", err);
-      setError("Couldn't turn on notifications -- please try again.");
+
+      // Brave disables Google's push service (which standard Web Push
+      // relies on in every Chromium browser) by default for privacy --
+      // pushManager.subscribe() throws exactly this on Brave until the user
+      // flips it back on. Not something this site can work around; browser
+      // config, not a bug here.
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setError(
+          'Push service blocked by your browser. In Brave: Settings → Privacy and security → enable "Use Google services for push messaging", then try again.'
+        );
+      } else {
+        setError("Couldn't turn on notifications -- please try again.");
+      }
     }
   }
 
