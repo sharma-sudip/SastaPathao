@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Hand, MapPin } from "lucide-react";
+import { Hand, Navigation } from "lucide-react";
 import { auth } from "@/auth";
 import { getPostById } from "@/lib/db/queries";
 import { formatDepartAt } from "@/lib/format-date";
@@ -32,22 +32,22 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
           Ride request · {post.status}
         </span>
         <h1 className="mt-2 text-2xl font-bold text-card-foreground">
-          <a
-            href={directionsUrl(
-              { label: post.origin, lat: post.originLat, lng: post.originLng },
-              { label: post.destination, lat: post.destLat, lng: post.destLng }
-            )}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 hover:underline"
-            title="Open directions in Google Maps"
-          >
-            {post.origin} <span className="text-muted-foreground">→</span> {post.destination}
-            <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2.5} />
-          </a>
+          {post.origin} <span className="text-muted-foreground">→</span> {post.destination}
         </h1>
         <p className="mt-1 text-muted-foreground">{formatDepartAt(post.departAt, "long")}</p>
         <p className="mt-1 text-sm text-muted-foreground">Posted by {post.author?.name ?? "A neighbor"}</p>
+        <a
+          href={directionsUrl(
+            { label: post.origin, lat: post.originLat, lng: post.originLng },
+            { label: post.destination, lat: post.destLat, lng: post.destLng }
+          )}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3.5 py-1.5 text-sm font-bold text-foreground shadow-sm transition hover:border-primary hover:bg-muted"
+        >
+          <Navigation className="h-3.5 w-3.5" strokeWidth={2.5} />
+          Get directions
+        </a>
       </div>
 
       {post.notes && (
