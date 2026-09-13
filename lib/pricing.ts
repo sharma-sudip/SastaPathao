@@ -1,4 +1,4 @@
-// A rough, non-authoritative suggested asking price -- $1/mile (informal
+// A rough, non-authoritative suggested asking price -- $1.50/mile (informal
 // gas-money rate, not a real fare calculation) against the straight-line
 // distance between two points, since this app has no driving-directions API
 // (deliberately -- see git history on why Google's Maps JS SDK was dropped).
@@ -6,7 +6,7 @@
 // dollar, keeps the suggestion from reading as a bare minimum. Purely a
 // starting point for the asking-price field on the post form; always
 // editable, and posting with no price at all is fine too.
-const RATE_PER_MILE_CENTS = 100;
+const RATE_PER_MILE_CENTS = 150;
 const CUSHION_CENTS = 200;
 const MIN_SUGGESTION_CENTS = 300;
 
