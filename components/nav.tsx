@@ -38,7 +38,6 @@ export async function Nav() {
           </Link>
           {session?.user ? (
             <>
-              <NotificationBell />
               <Link
                 href="/dashboard"
                 className="rounded-full px-3 py-1.5 font-semibold text-foreground/80 transition hover:bg-muted hover:text-foreground"
@@ -90,8 +89,13 @@ export async function Nav() {
               Sign in
             </Link>
           )}
+          {session?.user && <NotificationBell />}
           <ThemeToggle />
-          <MobileNavMenu isSignedIn={!!session?.user} isPartner={isPartnerEmail(session?.user?.email)} />
+          <MobileNavMenu
+            isSignedIn={!!session?.user}
+            isAdmin={isAdminEmail(session?.user?.email)}
+            isPartner={isPartnerEmail(session?.user?.email)}
+          />
         </nav>
       </div>
     </header>

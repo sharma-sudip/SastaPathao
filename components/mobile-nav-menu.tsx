@@ -6,13 +6,21 @@ import { Menu, X } from "lucide-react";
 
 const LINK_CLASS = "block px-4 py-2.5 text-sm font-semibold text-card-foreground transition hover:bg-muted";
 
-// The desktop nav shows "Need a ride" / "Offer a ride" / "Profile" inline
-// (they're just hidden below `sm` there via `hidden sm:inline-block`) --
-// "Need a ride"/"Offer a ride" are also reachable via <MobileTabBar>, but
-// Profile isn't reachable at all below `sm` without this. Kept as its own
-// client component since <Nav> itself is an async server component and this
-// needs local open/close state.
-export function MobileNavMenu({ isSignedIn, isPartner = false }: { isSignedIn: boolean; isPartner?: boolean }) {
+// The desktop nav shows "Need a ride" / "Offer a ride" / "Profile" / "Admin"
+// / "Redeem" inline (they're just hidden below `sm` there via `hidden
+// sm:inline-block`) -- "Need a ride"/"Offer a ride" are also reachable via
+// <MobileTabBar>, but Profile/Admin/Redeem aren't reachable at all below
+// `sm` without this. Kept as its own client component since <Nav> itself is
+// an async server component and this needs local open/close state.
+export function MobileNavMenu({
+  isSignedIn,
+  isAdmin = false,
+  isPartner = false,
+}: {
+  isSignedIn: boolean;
+  isAdmin?: boolean;
+  isPartner?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -48,6 +56,11 @@ export function MobileNavMenu({ isSignedIn, isPartner = false }: { isSignedIn: b
           {isSignedIn && (
             <Link href="/account" onClick={() => setOpen(false)} className={LINK_CLASS}>
               Profile
+            </Link>
+          )}
+          {isAdmin && (
+            <Link href="/admin" onClick={() => setOpen(false)} className={LINK_CLASS}>
+              Admin
             </Link>
           )}
           {isPartner && (
