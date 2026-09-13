@@ -1,4 +1,8 @@
+"use client";
+
+import { useState } from "react";
 import { User } from "lucide-react";
+import { PhotoLightbox } from "@/components/photo-lightbox";
 
 const SIZE_CLASSES = {
   sm: "h-6 w-6 text-xs",
@@ -13,6 +17,11 @@ const SIZE_CLASSES = {
  * Plain <img>, not next/image -- the Blob store's hostname varies per
  * project, and isn't worth wiring into next.config.ts's remote-image
  * allowlist for what's always a small, already-hosted image.
+ *
+ * Clicking a real photo opens it in <PhotoLightbox> for a closer look --
+ * `preventDefault`/`stopPropagation` because several call sites (post cards,
+ * the nav's own Profile link) render this inside a <Link>, and a photo
+ * click should zoom, not navigate.
  */
 export function Avatar({
   src,
@@ -23,15 +32,25 @@ export function Avatar({
   name?: string | null;
   size?: keyof typeof SIZE_CLASSES;
 }) {
+  const [zoomed, setZoomed] = useState(false);
   const className = `inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted font-bold text-muted-foreground ${SIZE_CLASSES[size]}`;
+  const alt = name ? `${name}'s profile picture` : "Profile picture";
 
   if (src) {
     return (
-      <img
-        src={src}
-        alt={name ? `${name}'s profile picture` : "Profile picture"}
-        className={`${className} object-cover`}
-      />
+      <>
+        <img
+          src={src}
+          alt={alt}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setZoomed(true);
+          }}
+          className={`${className} cursor-zoom-in object-cover`}
+        />
+        {zoomed && <PhotoLightbox src={src} alt={alt} onClose={() => setZoomed(false)} />}
+      </>
     );
   }
 
