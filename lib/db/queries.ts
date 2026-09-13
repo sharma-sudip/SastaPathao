@@ -127,6 +127,23 @@ export async function listUsersForAdmin() {
     .orderBy(desc(users.createdAt));
 }
 
+/** Every post, newest first -- for the /admin page's delete-any-post table. */
+export async function listPostsForAdmin() {
+  return db.query.posts.findMany({
+    orderBy: desc(posts.createdAt),
+    columns: {
+      id: true,
+      origin: true,
+      destination: true,
+      status: true,
+      createdAt: true,
+    },
+    with: {
+      author: { columns: { name: true, email: true } },
+    },
+  });
+}
+
 export async function getActiveClaimForUser(postId: string, userId: string) {
   return db.query.claims.findFirst({
     where: and(

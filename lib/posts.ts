@@ -31,6 +31,18 @@ export async function createPost(authorId: string, values: PostFormValues) {
   return post;
 }
 
+/**
+ * Admin hard-delete: removes the post row entirely (not a status change like
+ * cancelPost below). `onDelete: "cascade"` on claim.postId and
+ * message.claimId (lib/db/schema.ts) takes care of that post's claims and
+ * every message in them -- no manual cleanup needed here. Used by
+ * app/(site)/admin/actions.ts and the retention purge in lib/retention.ts;
+ * callers are responsible for the admin check.
+ */
+export async function deletePost(postId: string) {
+  await db.delete(posts).where(eq(posts.id, postId));
+}
+
 /** Author cancels their own post any time before it's FILLED. */
 export async function cancelPost(authorId: string, postId: string) {
   return db.transaction(async (tx) => {

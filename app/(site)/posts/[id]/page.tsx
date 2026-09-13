@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Hand, Navigation } from "lucide-react";
 import { auth } from "@/auth";
 import { getPostById } from "@/lib/db/queries";
-import { formatDepartAt } from "@/lib/format-date";
+import { formatDepartAt, formatRelativeTime } from "@/lib/format-date";
 import { directionsUrl } from "@/lib/maps-url";
 import { formatCents, suggestedPriceCents, MIN_PRICE_DOLLARS } from "@/lib/pricing";
 import { Avatar } from "@/components/avatar";
@@ -66,7 +66,7 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
         <p className="mt-1 text-muted-foreground">{formatDepartAt(post.departAt, "long")}</p>
         <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
           <Avatar src={post.author?.image} name={post.author?.name} />
-          Posted by {post.author?.name ?? "A neighbor"}
+          Requested by {post.author?.name ?? "a neighbor"} · {formatRelativeTime(post.createdAt)}
         </p>
         <a
           href={directionsUrl(

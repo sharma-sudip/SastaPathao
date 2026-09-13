@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { isAdminEmail } from "@/lib/admin";
-import { listUsersForAdmin } from "@/lib/db/queries";
+import { listUsersForAdmin, listPostsForAdmin } from "@/lib/db/queries";
+import { formatRelativeTime } from "@/lib/format-date";
 import { banAction, unbanAction } from "./actions";
+import { DeletePostButton } from "./delete-post-button";
 
 const dateFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
 
@@ -13,7 +15,7 @@ export default async function AdminPage() {
   const session = await auth();
   if (!isAdminEmail(session?.user?.email)) notFound();
 
-  const allUsers = await listUsersForAdmin();
+  const [allUsers, allPosts] = await Promise.all([listUsersForAdmin(), listPostsForAdmin()]);
 
   return (
     <div className="space-y-6">
@@ -71,6 +73,44 @@ export default async function AdminPage() {
                       </button>
                     </form>
                   )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Requests</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Deleting a post removes it and its claims/messages permanently -- posts also get purged
+          automatically a month after their ride date (see lib/retention.ts).
+        </p>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-border">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-muted text-muted-foreground">
+            <tr>
+              <th className="px-3 py-2 font-semibold">Route</th>
+              <th className="px-3 py-2 font-semibold">Requested by</th>
+              <th className="px-3 py-2 font-semibold">Status</th>
+              <th className="px-3 py-2 font-semibold">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {allPosts.map((p) => (
+              <tr key={p.id} className="border-t border-border">
+                <td className="px-3 py-2 text-card-foreground">
+                  {p.origin} → {p.destination}
+                </td>
+                <td className="px-3 py-2 text-muted-foreground">
+                  Requested by {p.author?.name ?? p.author?.email ?? "a neighbor"} ·{" "}
+                  {formatRelativeTime(p.createdAt)}
+                </td>
+                <td className="px-3 py-2 text-muted-foreground">{p.status}</td>
+                <td className="px-3 py-2">
+                  <DeletePostButton postId={p.id} />
                 </td>
               </tr>
             ))}
