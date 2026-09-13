@@ -18,6 +18,7 @@ type Status = "unsupported" | "loading" | "off" | "on" | "denied";
 // both, and syncs the subscription to the server via push-actions.ts.
 export function PushToggle() {
   const [status, setStatus] = useState<Status>("loading");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,38 +44,58 @@ export function PushToggle() {
   }, []);
 
   async function enable() {
+    setError(null);
     const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-    if (!publicKey) return;
-
-    const permission = await Notification.requestPermission();
-    if (permission !== "granted") {
-      setStatus("denied");
+    if (!publicKey) {
+      // Previously a silent no-op -- clicking "Turn on" did nothing at all,
+      // with no feedback, if this env var wasn't set on the server.
+      setError("Notifications aren't configured on this server yet.");
       return;
     }
 
-    const reg = await navigator.serviceWorker.register("/sw.js");
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey),
-    });
-    const json = sub.toJSON();
-    if (json.endpoint && json.keys?.p256dh && json.keys.auth) {
-      await subscribeToPushAction({
-        endpoint: json.endpoint,
-        keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setStatus("denied");
+        return;
+      }
+
+      const reg = await navigator.serviceWorker.register("/sw.js");
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
+      const json = sub.toJSON();
+      if (json.endpoint && json.keys?.p256dh && json.keys.auth) {
+        await subscribeToPushAction({
+          endpoint: json.endpoint,
+          keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
+        });
+      }
+      setStatus("on");
+    } catch (err) {
+      // Same silent-no-op problem as the missing key above -- any failure
+      // here (bad key format, the browser rejecting the subscription, etc.)
+      // used to leave the button looking like it just didn't respond.
+      console.error("Failed to enable push notifications:", err);
+      setError("Couldn't turn on notifications -- please try again.");
     }
-    setStatus("on");
   }
 
   async function disable() {
-    const reg = await navigator.serviceWorker.getRegistration();
-    const sub = await reg?.pushManager.getSubscription();
-    if (sub) {
-      await unsubscribeFromPushAction(sub.endpoint);
-      await sub.unsubscribe();
+    setError(null);
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sub = await reg?.pushManager.getSubscription();
+      if (sub) {
+        await unsubscribeFromPushAction(sub.endpoint);
+        await sub.unsubscribe();
+      }
+      setStatus("off");
+    } catch (err) {
+      console.error("Failed to disable push notifications:", err);
+      setError("Couldn't turn off notifications -- please try again.");
     }
-    setStatus("off");
   }
 
   if (status === "loading") return null;
@@ -121,6 +142,7 @@ export function PushToggle() {
           </button>
         )}
       </div>
+      {error && <p className="mt-2 text-xs text-danger">{error}</p>}
     </div>
   );
 }
