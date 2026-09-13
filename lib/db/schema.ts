@@ -33,6 +33,11 @@ export const users = pgTable("user", {
   // other query needs to check it.
   bannedAt: timestamp("banned_at"),
   banReason: text("ban_reason"),
+  // Opted in via /account (components/driver-opt-in-toggle.tsx) to be
+  // emailed + in-app notified about every new ride request, not just ones
+  // they've already claimed. Off by default -- this is unrelated to actually
+  // claiming a ride.
+  driverOptIn: boolean("driver_opt_in").notNull().default(false),
 });
 
 export const accounts = pgTable(

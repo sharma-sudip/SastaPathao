@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { posts, claims, users } from "@/lib/db/schema";
 
@@ -89,7 +89,7 @@ export async function getUserClaims(userId: string) {
  */
 export async function getUserProfile(userId: string) {
   const [row] = await db
-    .select({ name: users.name, phone: users.phone, image: users.image })
+    .select({ name: users.name, phone: users.phone, image: users.image, driverOptIn: users.driverOptIn })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
@@ -98,6 +98,18 @@ export async function getUserProfile(userId: string) {
 
 export function isProfileComplete(profile: { name: string | null; phone: string | null } | null) {
   return !!profile?.name?.trim() && !!profile?.phone?.trim();
+}
+
+/**
+ * Everyone opted in (components/driver-opt-in-toggle.tsx) to hear about
+ * every new ride request, excluding whoever's posting it. Used by
+ * requests/new/actions.ts -- never selects `phone`.
+ */
+export async function getOptedInDrivers(excludeUserId: string) {
+  return db
+    .select({ id: users.id, name: users.name, email: users.email })
+    .from(users)
+    .where(and(eq(users.driverOptIn, true), ne(users.id, excludeUserId)));
 }
 
 /** Every user, newest first -- for the /admin page. Never selects `phone`. */

@@ -50,6 +50,13 @@
       "when": 1789280869028,
       "tag": "0006_flowery_diamondback",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789329016592,
+      "tag": "0007_handy_the_santerians",
+      "breakpoints": true
     }
   ]
 }

@@ -4,6 +4,7 @@ import { getUserProfile } from "@/lib/db/queries";
 import { ProfileForm } from "./profile-form";
 import { PhotoUploadForm } from "./photo-upload-form";
 import { PushToggle } from "@/components/push-toggle";
+import { DriverOptInToggle } from "@/components/driver-opt-in-toggle";
 
 export default async function AccountPage({ searchParams }: PageProps<"/account">) {
   const session = await auth();
@@ -36,8 +37,9 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         callbackUrl={callbackUrl}
       />
       {!isOnboarding && (
-        <div className="mt-4">
+        <div className="mt-4 space-y-3">
           <PushToggle />
+          <DriverOptInToggle initialOptedIn={me?.driverOptIn ?? false} />
         </div>
       )}
     </div>

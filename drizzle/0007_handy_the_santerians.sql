@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "driver_opt_in" boolean DEFAULT false NOT NULL;
