@@ -43,6 +43,13 @@
       "when": 1789260732718,
       "tag": "0005_medical_absorbing_man",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789280869028,
+      "tag": "0006_flowery_diamondback",
+      "breakpoints": true
     }
   ]
 }

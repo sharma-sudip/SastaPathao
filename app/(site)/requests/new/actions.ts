@@ -23,6 +23,7 @@ export async function createRequestAction(
     destLng: formData.get("destinationLng") || undefined,
     departAt: formData.get("departAt"),
     notes: formData.get("notes") ?? "",
+    askingPrice: formData.get("askingPrice") ?? "",
   });
 
   if (!parsed.success) {
@@ -33,6 +34,7 @@ export async function createRequestAction(
         origin: fieldErrors.origin?.[0],
         destination: fieldErrors.destination?.[0],
         departAt: fieldErrors.departAt?.[0],
+        askingPrice: fieldErrors.askingPrice?.[0],
       },
     };
   }

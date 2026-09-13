@@ -95,6 +95,11 @@ export const claimStatusEnum = pgEnum("claim_status", [
   "WITHDRAWN",
 ]);
 
+// Whose number is currently on the table for a claim's offerAmountCents --
+// the OTHER party is the one who can accept/decline/counter it. See
+// lib/claims.ts.
+export const offerByEnum = pgEnum("offer_by", ["claimant", "author"]);
+
 export const posts = pgTable("post", {
   id: text("id")
     .primaryKey()
@@ -111,6 +116,12 @@ export const posts = pgTable("post", {
   // Can be in the future -- this is the "schedule a pickup" field.
   departAt: timestamp("depart_at").notNull(),
   notes: text("notes"),
+  // Optional -- pre-filled on the post form from a rough $/mile heuristic
+  // (lib/pricing.ts) against the straight-line origin/destination distance,
+  // but freely editable, and can be left blank entirely (some posts just
+  // aren't priced). Purely a suggested/agreed number for coordination --
+  // never processes payment, see the footer disclaimer.
+  askingPriceCents: integer("asking_price_cents"),
   status: postStatusEnum("status").notNull().default("OPEN"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -128,6 +139,14 @@ export const claims = pgTable("claim", {
     .references(() => users.id, { onDelete: "cascade" }),
   status: claimStatusEnum("status").notNull().default("PROPOSED"),
   message: text("message"),
+  // Optional -- the offer currently on the table (starts at whatever the
+  // claimant proposed, defaulting to the post's askingPriceCents but
+  // editable). `offerBy` says who put that number there; the other party is
+  // the one who can accept (-> CONFIRMED), decline/withdraw, or counter
+  // (updates offerAmountCents, flips offerBy, stays PROPOSED). See
+  // lib/claims.ts's confirmClaim/counterOffer.
+  offerAmountCents: integer("offer_amount_cents"),
+  offerBy: offerByEnum("offer_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   respondedAt: timestamp("responded_at"),
 });

@@ -6,11 +6,13 @@ export function NewClaimEmail({
   origin,
   destination,
   claimantName,
+  offerFormatted,
 }: {
   postUrl: string;
   origin: string;
   destination: string;
   claimantName: string | null;
+  offerFormatted?: string | null;
 }) {
   return (
     <EmailShell preview="Someone wants to fill your ride" heading="You've got interest">
@@ -19,7 +21,7 @@ export function NewClaimEmail({
         <strong>
           {origin} → {destination}
         </strong>{" "}
-        post on Sasta Pathao.
+        post on Sasta Pathao{offerFormatted ? ` for ${offerFormatted}` : ""}.
       </Text>
       <EmailButton href={postUrl}>Review and respond</EmailButton>
     </EmailShell>

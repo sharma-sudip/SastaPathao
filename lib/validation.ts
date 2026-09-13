@@ -4,6 +4,18 @@ import { z } from "zod";
 // used by both the client form components (for inline errors) and the
 // Server Actions that receive the submitted FormData.
 
+// Dollars, as typed into a plain <input type="number"> -- converted to
+// cents (lib/pricing.ts's unit, matches the DB columns) wherever this is
+// actually used. Optional everywhere: pricing is a convenience on top of
+// the existing free-text `message`/`notes`, never required.
+export const priceDollarsSchema = z.preprocess(
+  // An empty <input type="number"> submits "" -- z.coerce.number() would
+  // otherwise turn that into 0 (a real, meant price) rather than "no price
+  // entered at all".
+  (val) => (val === "" || val == null ? undefined : val),
+  z.coerce.number().min(0, "Enter a price of $0 or more.").max(500, "Keep it under $500.").optional()
+);
+
 export const postFormSchema = z.object({
   origin: z.string().trim().min(2, "Enter a pickup location.").max(200),
   originLat: z.coerce.number().min(-90).max(90).optional(),
@@ -16,6 +28,7 @@ export const postFormSchema = z.object({
     .min(1, "Choose a date and time.")
     .refine((v) => !Number.isNaN(Date.parse(v)), "Enter a valid date and time."),
   notes: z.string().trim().max(500).optional().or(z.literal("")),
+  askingPrice: priceDollarsSchema,
 });
 
 export type PostFormValues = z.infer<typeof postFormSchema>;
@@ -23,6 +36,12 @@ export type PostFormValues = z.infer<typeof postFormSchema>;
 export const claimFormSchema = z.object({
   postId: z.string().uuid(),
   message: z.string().trim().max(300).optional().or(z.literal("")),
+  offerAmount: priceDollarsSchema,
+});
+
+export const counterOfferFormSchema = z.object({
+  claimId: z.string().uuid(),
+  amount: z.coerce.number().min(0.01, "Enter a price greater than $0.").max(500, "Keep it under $500."),
 });
 
 export const messageFormSchema = z.object({

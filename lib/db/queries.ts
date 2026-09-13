@@ -18,6 +18,8 @@ const CLAIM_COLUMNS = {
   status: true,
   message: true,
   claimantId: true,
+  offerAmountCents: true,
+  offerBy: true,
   createdAt: true,
   respondedAt: true,
 } as const;

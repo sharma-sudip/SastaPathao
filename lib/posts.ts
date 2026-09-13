@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { posts, claims } from "@/lib/db/schema";
 import type { PostFormValues } from "@/lib/validation";
 import { parseEasternDatetimeLocal } from "@/lib/format-date";
+import { dollarsToCents } from "@/lib/pricing";
 
 export async function createPost(authorId: string, values: PostFormValues) {
   const [post] = await db
@@ -23,6 +24,7 @@ export async function createPost(authorId: string, values: PostFormValues) {
       // time its poster meant. See lib/format-date.ts's comment.
       departAt: parseEasternDatetimeLocal(values.departAt),
       notes: values.notes || null,
+      askingPriceCents: values.askingPrice != null ? dollarsToCents(values.askingPrice) : null,
     })
     .returning({ id: posts.id });
 

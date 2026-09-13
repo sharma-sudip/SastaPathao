@@ -115,6 +115,15 @@ project, not a Pathao product.
   volunteer on the same post at once. The post's author confirms one (`CONFIRMED` — auto-declines
   every other pending volunteer) or declines (`DECLINED`). A claimant can withdraw a still-pending
   claim.
+- **Pricing**: entirely optional, on both a post and a claim. A post's `askingPriceCents` is
+  pre-filled on the form from a rough $1/mile heuristic against the straight-line origin/destination
+  distance (`lib/pricing.ts` — no driving-directions API), but freely editable or removable. A
+  claim's `offerAmountCents` starts there too, and `offerBy` tracks whose number is currently on
+  the table: the *other* party can accept it (`confirmClaim` in `lib/claims.ts`, generalized so
+  either the author or the claimant can be the one accepting, depending on whose turn it is),
+  decline/withdraw regardless of turn, or counter with a different amount (`counterOffer`, which
+  flips `offerBy` and keeps the claim `PROPOSED`). Still never processes any payment — just a
+  number both sides can agree on.
 - **Contact info**: a phone number is only ever readable through
   [`lib/contacts.ts`](lib/contacts.ts)'s `revealContactIfAuthorized`, which checks that the
   viewer is the post's author or has an active claim on it before the phone column is even

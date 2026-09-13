@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { getPostById } from "@/lib/db/queries";
 import { formatDepartAt } from "@/lib/format-date";
 import { directionsUrl } from "@/lib/maps-url";
+import { formatCents } from "@/lib/pricing";
 import { Avatar } from "@/components/avatar";
 import { ContactCard } from "@/components/contact-card";
 import { ClaimList } from "@/components/claim-list";
@@ -28,10 +29,17 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-muted-foreground">
-          <Hand className="h-3.5 w-3.5" strokeWidth={2.5} />
-          Ride request · {post.status}
-        </span>
+        <div className="flex items-center justify-between gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-muted-foreground">
+            <Hand className="h-3.5 w-3.5" strokeWidth={2.5} />
+            Ride request · {post.status}
+          </span>
+          {post.askingPriceCents != null && (
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
+              {formatCents(post.askingPriceCents)}
+            </span>
+          )}
+        </div>
         <h1 className="mt-2 text-2xl font-bold text-card-foreground">
           {post.origin} <span className="text-muted-foreground">→</span> {post.destination}
         </h1>
@@ -81,6 +89,27 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
           <label htmlFor="message" className="block text-sm font-medium text-foreground">
             Offer to give this ride
           </label>
+          <div>
+            <label htmlFor="offerAmount" className="block text-xs font-medium text-muted-foreground">
+              Your price <span className="text-muted-foreground">(optional)</span>
+            </label>
+            <div className="relative mt-1 w-32">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                $
+              </span>
+              <input
+                id="offerAmount"
+                name="offerAmount"
+                type="number"
+                min="0"
+                max="500"
+                step="1"
+                defaultValue={post.askingPriceCents != null ? (post.askingPriceCents / 100).toFixed(0) : ""}
+                placeholder="0"
+                className="w-full rounded-lg border border-border bg-background py-2 pl-6 pr-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
+              />
+            </div>
+          </div>
           <textarea
             id="message"
             name="message"

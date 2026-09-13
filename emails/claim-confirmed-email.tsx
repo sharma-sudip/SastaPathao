@@ -7,12 +7,14 @@ export function ClaimConfirmedEmail({
   destination,
   counterpartName,
   counterpartPhone,
+  agreedPriceFormatted,
 }: {
   postUrl: string;
   origin: string;
   destination: string;
   counterpartName: string | null;
   counterpartPhone: string | null;
+  agreedPriceFormatted?: string | null;
 }) {
   return (
     <EmailShell preview="Your ride is confirmed" heading="Ride confirmed 🎉">
@@ -20,7 +22,7 @@ export function ClaimConfirmedEmail({
         <strong>
           {origin} → {destination}
         </strong>{" "}
-        is confirmed on Sasta Pathao.
+        is confirmed on Sasta Pathao{agreedPriceFormatted ? ` for ${agreedPriceFormatted}` : ""}.
       </Text>
       {counterpartName || counterpartPhone ? (
         <Text style={{ color: "#3a3f3a", fontSize: "15px" }}>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Hand } from "lucide-react";
 import type { OpenPost } from "@/lib/db/queries";
 import { formatDepartAt } from "@/lib/format-date";
+import { formatCents } from "@/lib/pricing";
 import { Avatar } from "@/components/avatar";
 
 export function PostCard({ post }: { post: OpenPost }) {
@@ -18,9 +19,16 @@ export function PostCard({ post }: { post: OpenPost }) {
         <span className="text-xs font-medium text-muted-foreground">{formatDepartAt(post.departAt)}</span>
       </div>
 
-      <p className="mt-2 text-base font-bold text-card-foreground">
-        {post.origin} <span className="text-muted-foreground">→</span> {post.destination}
-      </p>
+      <div className="mt-2 flex items-start justify-between gap-2">
+        <p className="text-base font-bold text-card-foreground">
+          {post.origin} <span className="text-muted-foreground">→</span> {post.destination}
+        </p>
+        {post.askingPriceCents != null && (
+          <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-sm font-bold text-primary">
+            {formatCents(post.askingPriceCents)}
+          </span>
+        )}
+      </div>
 
       <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground">
         <span className="flex items-center gap-1.5">

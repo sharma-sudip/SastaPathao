@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import dynamic from "next/dynamic";
 import { LocationPicker } from "@/components/location-picker";
+import { suggestedPriceCents } from "@/lib/pricing";
 import type { PostActionState } from "@/lib/action-types";
 
 const DualLocationMap = dynamic(() => import("@/components/dual-location-map"), {
@@ -30,6 +31,30 @@ export function PostForm({
   const [origin, setOrigin] = useState<Point>(EMPTY_POINT);
   const [destination, setDestination] = useState<Point>(EMPTY_POINT);
   const [activeField, setActiveField] = useState<"origin" | "destination">("origin");
+
+  // Pre-filled from a rough $/mile heuristic (lib/pricing.ts) once both
+  // points are set, but freely editable -- `priceTouched` stops the
+  // auto-suggestion from clobbering a price the user already typed. Adjusted
+  // during render (React's recommended pattern for "derive state from
+  // changed props/state" without an effect) rather than in a useEffect,
+  // guarded by `lastPricedCoordsKey` so it only fires once per coordinate
+  // change instead of looping.
+  const [askingPrice, setAskingPrice] = useState("");
+  const [priceTouched, setPriceTouched] = useState(false);
+  const [lastPricedCoordsKey, setLastPricedCoordsKey] = useState<string | null>(null);
+
+  const coordsKey =
+    origin.coords && destination.coords
+      ? `${origin.coords.lat},${origin.coords.lng}|${destination.coords.lat},${destination.coords.lng}`
+      : null;
+
+  if (coordsKey && coordsKey !== lastPricedCoordsKey) {
+    setLastPricedCoordsKey(coordsKey);
+    if (!priceTouched) {
+      const cents = suggestedPriceCents(origin.coords!, destination.coords!);
+      setAskingPrice((cents / 100).toFixed(0));
+    }
+  }
 
   async function handleMapPick(lat: number, lng: number) {
     const setPoint = activeField === "origin" ? setOrigin : setDestination;
@@ -102,6 +127,45 @@ export function PostForm({
           }`}
         />
         {fieldErrors?.departAt && <p className="mt-1 text-sm font-semibold text-danger">{fieldErrors.departAt}</p>}
+      </div>
+
+      <div>
+        <label htmlFor="askingPrice" className="block text-sm font-medium text-foreground">
+          Asking price <span className="text-muted-foreground">(optional)</span>
+        </label>
+        <div className="relative mt-1">
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+            $
+          </span>
+          <input
+            id="askingPrice"
+            name="askingPrice"
+            type="number"
+            min="0"
+            max="500"
+            step="1"
+            value={askingPrice}
+            onChange={(e) => {
+              setPriceTouched(true);
+              setAskingPrice(e.target.value);
+            }}
+            placeholder="0"
+            aria-invalid={!!fieldErrors?.askingPrice}
+            className={`w-full rounded-lg border bg-background py-2 pl-6 pr-3 text-sm text-foreground focus:outline-none focus:ring-2 ${
+              fieldErrors?.askingPrice
+                ? "border-danger focus:border-danger focus:ring-danger/30"
+                : "border-border focus:border-primary focus:ring-ring/30"
+            }`}
+          />
+        </div>
+        {fieldErrors?.askingPrice ? (
+          <p className="mt-1 text-sm font-semibold text-danger">{fieldErrors.askingPrice}</p>
+        ) : (
+          <p className="mt-1 text-xs text-muted-foreground">
+            A rough suggestion based on distance — change it, clear it, or leave it for drivers to offer
+            whatever they think is fair.
+          </p>
+        )}
       </div>
 
       <div>

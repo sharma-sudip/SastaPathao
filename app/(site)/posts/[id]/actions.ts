@@ -3,18 +3,20 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
-import { createClaim, withdrawClaim, confirmClaim, declineClaim } from "@/lib/claims";
+import { createClaim, withdrawClaim, confirmClaim, declineClaim, counterOffer } from "@/lib/claims";
 import { cancelPost } from "@/lib/posts";
 import { getPostById, getUserProfile, isProfileComplete } from "@/lib/db/queries";
 import { revealContactIfAuthorized } from "@/lib/contacts";
 import { getMessagesForClaim, sendMessage } from "@/lib/messages";
-import { claimFormSchema, messageFormSchema } from "@/lib/validation";
+import { claimFormSchema, messageFormSchema, counterOfferFormSchema } from "@/lib/validation";
+import { formatCents, dollarsToCents } from "@/lib/pricing";
 import { sendEmailSafely, EMAIL_FROM } from "@/lib/resend";
 import { notifyUser } from "@/lib/notify";
 import { NewClaimEmail } from "@/emails/new-claim-email";
 import { ClaimConfirmedEmail } from "@/emails/claim-confirmed-email";
 import { ClaimDeclinedEmail } from "@/emails/claim-declined-email";
 import { ClaimWithdrawnEmail } from "@/emails/claim-withdrawn-email";
+import { ClaimCounteredEmail } from "@/emails/claim-countered-email";
 import { NewMessageEmail } from "@/emails/new-message-email";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
@@ -37,16 +39,23 @@ export async function claimAction(postId: string, formData: FormData) {
   const profile = await getUserProfile(session.user.id);
   if (!isProfileComplete(profile)) redirect(`/account?callbackUrl=/posts/${postId}`);
 
-  const parsed = claimFormSchema.safeParse({ postId, message: formData.get("message") ?? "" });
+  const parsed = claimFormSchema.safeParse({
+    postId,
+    message: formData.get("message") ?? "",
+    offerAmount: formData.get("offerAmount") ?? "",
+  });
   if (!parsed.success) return;
 
+  const offerAmountCents = parsed.data.offerAmount != null ? dollarsToCents(parsed.data.offerAmount) : null;
+
   try {
-    const { authorId } = await createClaim(session.user.id, postId, parsed.data.message || null);
+    const { authorId } = await createClaim(session.user.id, postId, parsed.data.message || null, offerAmountCents);
 
     const post = await getPostById(postId);
     const author = await emailFor(authorId);
     if (post) {
       const url = await siteUrl(postId);
+      const offerFormatted = offerAmountCents != null ? formatCents(offerAmountCents) : null;
       if (author?.email) {
         await sendEmailSafely({
           from: EMAIL_FROM,
@@ -57,12 +66,15 @@ export async function claimAction(postId: string, formData: FormData) {
             origin: post.origin,
             destination: post.destination,
             claimantName: session.user.name ?? null,
+            offerFormatted,
           }),
         });
       }
       await notifyUser(authorId, {
         title: "Someone wants to fill your ride",
-        body: `${session.user.name ?? "A neighbor"} offered for ${post.origin} → ${post.destination}`,
+        body: `${session.user.name ?? "A neighbor"} offered for ${post.origin} → ${post.destination}${
+          offerFormatted ? ` — ${offerFormatted}` : ""
+        }`,
         url,
       });
     }
@@ -117,26 +129,36 @@ export async function confirmAction(claimId: string, postId: string) {
 
     if (post) {
       const claimantContact = await emailFor(result.claimantId);
-      const authorContact = await emailFor(session.user.id);
-      const revealedForClaimant = await revealContactIfAuthorized(postId, result.claimantId);
+      const authorContact = await emailFor(result.authorId);
+      const priceLine = result.agreedPriceCents != null ? ` for ${formatCents(result.agreedPriceCents)}` : "";
 
-      if (claimantContact?.email) {
+      // Either party can be the one accepting now (the author confirming
+      // the claimant's offer, or the claimant accepting the author's
+      // counter) -- notify whichever one *didn't* just act, same as the
+      // acting party already seeing their own success state in the UI.
+      const claimantIsActing = session.user.id === result.claimantId;
+      const recipientId = claimantIsActing ? result.authorId : result.claimantId;
+      const recipientContact = claimantIsActing ? authorContact : claimantContact;
+      const revealedForRecipient = await revealContactIfAuthorized(postId, recipientId);
+
+      if (recipientContact?.email) {
         await sendEmailSafely({
           from: EMAIL_FROM,
-          to: claimantContact.email,
+          to: recipientContact.email,
           subject: "Your ride is confirmed",
           react: ClaimConfirmedEmail({
             postUrl: url,
             origin: post.origin,
             destination: post.destination,
-            counterpartName: authorContact?.name ?? null,
-            counterpartPhone: revealedForClaimant?.phone ?? null,
+            counterpartName: (claimantIsActing ? claimantContact : authorContact)?.name ?? null,
+            counterpartPhone: revealedForRecipient?.phone ?? null,
+            agreedPriceFormatted: result.agreedPriceCents != null ? formatCents(result.agreedPriceCents) : null,
           }),
         });
       }
-      await notifyUser(result.claimantId, {
+      await notifyUser(recipientId, {
         title: "Your ride is confirmed 🎉",
-        body: `${post.origin} → ${post.destination}`,
+        body: `${post.origin} → ${post.destination}${priceLine}`,
         url,
       });
 
@@ -192,6 +214,52 @@ export async function declineAction(claimId: string, postId: string) {
     }
   } catch (err) {
     console.error("declineAction failed:", err);
+  }
+
+  revalidatePath(`/posts/${postId}`);
+  revalidatePath("/");
+}
+
+export async function counterAction(claimId: string, postId: string, formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect(`/login?callbackUrl=/posts/${postId}`);
+
+  const parsed = counterOfferFormSchema.safeParse({ claimId, amount: formData.get("amount") });
+  if (!parsed.success) return;
+
+  try {
+    const result = await counterOffer(session.user.id, claimId, dollarsToCents(parsed.data.amount));
+    const post = await getPostById(postId);
+    if (post) {
+      const url = await siteUrl(postId);
+      const amountFormatted = formatCents(result.amountCents);
+      // Notify whichever party didn't just counter -- it's now their turn.
+      const recipientId = result.counteredByAuthor ? result.claimantId : result.authorId;
+      const counterpartContact = await emailFor(result.counteredByAuthor ? result.authorId : result.claimantId);
+      const recipientContact = await emailFor(recipientId);
+
+      if (recipientContact?.email) {
+        await sendEmailSafely({
+          from: EMAIL_FROM,
+          to: recipientContact.email,
+          subject: "You've got a counter-offer",
+          react: ClaimCounteredEmail({
+            postUrl: url,
+            origin: post.origin,
+            destination: post.destination,
+            counterpartName: counterpartContact?.name ?? null,
+            amountFormatted,
+          }),
+        });
+      }
+      await notifyUser(recipientId, {
+        title: "You've got a counter-offer",
+        body: `${counterpartContact?.name ?? "The other person"} proposed ${amountFormatted} for ${post.origin} → ${post.destination}`,
+        url,
+      });
+    }
+  } catch (err) {
+    console.error("counterAction failed:", err);
   }
 
   revalidatePath(`/posts/${postId}`);
