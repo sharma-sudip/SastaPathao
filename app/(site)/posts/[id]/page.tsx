@@ -26,6 +26,13 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
   const isOpenForClaims = post.status === "OPEN" || post.status === "PENDING";
   const canClaim = !!viewerId && !isAuthor && !hasActiveClaim && isOpenForClaims;
 
+  // Once a claim's confirmed, its offerAmountCents (whatever was actually
+  // agreed after any back-and-forth) is the real price -- post.askingPriceCents
+  // is just the original suggestion from before negotiation and never
+  // updates, so showing it here once FILLED would be stale/wrong.
+  const confirmedClaim = post.claims.find((c) => c.status === "CONFIRMED");
+  const displayPriceCents = confirmedClaim?.offerAmountCents ?? post.askingPriceCents;
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
@@ -34,9 +41,10 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
             <Hand className="h-3.5 w-3.5" strokeWidth={2.5} />
             Ride request · {post.status}
           </span>
-          {post.askingPriceCents != null && (
+          {displayPriceCents != null && (
             <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
-              {formatCents(post.askingPriceCents)}
+              {formatCents(displayPriceCents)}
+              {confirmedClaim && <span className="ml-1 font-medium text-primary/70">agreed</span>}
             </span>
           )}
         </div>

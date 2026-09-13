@@ -11,6 +11,20 @@ function urlBase64ToUint8Array(base64String: string) {
   return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
 }
 
+// Brave's own feature-detection API (not a user-agent guess) -- the same
+// pushManager.subscribe() AbortError shows up on plain Chrome too, for
+// unrelated reasons (an ad blocker/privacy extension, a managed device
+// policy, a network blocking Google's push endpoints), so Brave-specific
+// guidance would be actively wrong there.
+async function isBrave(): Promise<boolean> {
+  const nav = navigator as Navigator & { brave?: { isBrave: () => Promise<boolean> } };
+  try {
+    return nav.brave ? await nav.brave.isBrave() : false;
+  } catch {
+    return false;
+  }
+}
+
 type Status = "unsupported" | "loading" | "off" | "on" | "denied";
 
 // Lives on the account page. Web Push needs a registered service worker
@@ -79,15 +93,25 @@ export function PushToggle() {
       // used to leave the button looking like it just didn't respond.
       console.error("Failed to enable push notifications:", err);
 
-      // Brave disables Google's push service (which standard Web Push
-      // relies on in every Chromium browser) by default for privacy --
-      // pushManager.subscribe() throws exactly this on Brave until the user
-      // flips it back on. Not something this site can work around; browser
-      // config, not a bug here.
       if (err instanceof DOMException && err.name === "AbortError") {
-        setError(
-          'Push service blocked by your browser. In Brave: Settings → Privacy and security → enable "Use Google services for push messaging", then try again.'
-        );
+        // Every Chromium browser relies on a push service (Google's, by
+        // default) for pushManager.subscribe() to work at all -- this
+        // AbortError means it's blocked, but *why* differs by browser:
+        // Brave disables it for privacy by default (its own toggle to
+        // re-enable it); on plain Chrome the same error usually means an ad
+        // blocker/privacy extension, a managed device policy, or a network
+        // blocking Google's push endpoints. Detecting Brave properly (its
+        // own feature-detection API, not a guess) avoids sending a Chrome
+        // user to a settings page that doesn't exist there.
+        if (await isBrave()) {
+          setError(
+            'Push service blocked by Brave. Settings → Privacy and security → enable "Use Google services for push messaging", then try again.'
+          );
+        } else {
+          setError(
+            "Push service blocked -- check for an ad blocker/privacy extension, a managed-device policy, or a network blocking Google's push service, then try again."
+          );
+        }
       } else {
         setError("Couldn't turn on notifications -- please try again.");
       }
