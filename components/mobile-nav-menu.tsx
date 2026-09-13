@@ -38,7 +38,7 @@ export function MobileNavMenu({ isSignedIn }: { isSignedIn: boolean }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-30 mt-2 w-48 overflow-hidden rounded-xl border border-border bg-card py-1 shadow-lg">
+        <div className="absolute right-0 top-full z-[1100] mt-2 w-48 overflow-hidden rounded-xl border border-border bg-card py-1 shadow-lg">
           <Link href="/requests/new" onClick={() => setOpen(false)} className={LINK_CLASS}>
             Need a ride
           </Link>

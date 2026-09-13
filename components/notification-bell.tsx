@@ -91,7 +91,7 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-30 mt-2 w-80 max-w-[90vw] overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+        <div className="absolute right-0 top-full z-[1100] mt-2 w-80 max-w-[90vw] overflow-hidden rounded-xl border border-border bg-card shadow-lg">
           <div className="max-h-96 overflow-y-auto">
             {items.length === 0 ? (
               <p className="p-4 text-sm text-muted-foreground">No notifications yet.</p>
