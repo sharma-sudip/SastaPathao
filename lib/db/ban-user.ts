@@ -3,8 +3,13 @@ config({ path: ".env.local" });
 
 import { and, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-serverless";
-import { Pool } from "@neondatabase/serverless";
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import ws from "ws";
 import * as schema from "./schema";
+
+// Node has no built-in WebSocket client -- see the same line in
+// lib/db/index.ts for why this is needed to connect at all.
+neonConfig.webSocketConstructor = ws;
 
 // Standalone script (run via `npm run db:ban -- <email> [reason]` or
 // `npm run db:unban -- <email>`), so it builds its own connection rather

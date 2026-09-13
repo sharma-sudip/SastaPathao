@@ -2,12 +2,18 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 
 import { drizzle } from "drizzle-orm/neon-serverless";
-import { Pool } from "@neondatabase/serverless";
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import ws from "ws";
 import * as schema from "./schema";
 
 // Standalone script (run via `npm run db:seed`), so it builds its own
 // connection rather than importing lib/db/index.ts (which is `server-only`
 // and assumes a running Next.js server process).
+
+// Node has no built-in WebSocket client -- see the same line in
+// lib/db/index.ts for why this is needed to connect at all.
+neonConfig.webSocketConstructor = ws;
+
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const db = drizzle(pool, { schema });
 

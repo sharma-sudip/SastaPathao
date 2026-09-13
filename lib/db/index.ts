@@ -1,8 +1,15 @@
 import "server-only";
 
 import { drizzle } from "drizzle-orm/neon-serverless";
-import { Pool } from "@neondatabase/serverless";
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import ws from "ws";
 import * as schema from "./schema";
+
+// The Pool below talks to Neon over a real WebSocket (see the comment on
+// `db` for why), but Node has no built-in WebSocket client (unlike browsers
+// and edge runtimes) -- without this, connecting throws "All attempts to
+// open a WebSocket ... failed". https://neon.tech/docs/serverless/serverless-driver#configuring-neonconfig
+neonConfig.webSocketConstructor = ws;
 
 const globalForDb = globalThis as unknown as { pool?: Pool };
 
