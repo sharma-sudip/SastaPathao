@@ -8,7 +8,12 @@
 // editable, and posting with no price at all is fine too.
 const RATE_PER_MILE_CENTS = 150;
 const CUSHION_CENTS = 200;
-const MIN_SUGGESTION_CENTS = 300;
+
+// $5 floor on any price in the app -- the suggested heuristic, a post's
+// asking price, and a claim's offer/counter all share this (lib/validation.ts
+// enforces it on the latter two).
+export const MIN_PRICE_DOLLARS = 5;
+const MIN_SUGGESTION_CENTS = MIN_PRICE_DOLLARS * 100;
 
 const EARTH_RADIUS_MILES = 3958.8;
 

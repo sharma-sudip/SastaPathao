@@ -1,7 +1,7 @@
 import { Check, X } from "lucide-react";
 import type { PostDetail } from "@/lib/db/queries";
 import { confirmAction, declineAction, withdrawAction, counterAction } from "@/app/(site)/posts/[id]/actions";
-import { formatCents } from "@/lib/pricing";
+import { formatCents, MIN_PRICE_DOLLARS } from "@/lib/pricing";
 import { ClaimChat } from "@/components/claim-chat";
 import { Avatar } from "@/components/avatar";
 
@@ -110,7 +110,7 @@ export function ClaimList({ post, viewerId }: { post: PostDetail; viewerId: stri
                       <input
                         type="number"
                         name="amount"
-                        min="0"
+                        min={MIN_PRICE_DOLLARS}
                         max="500"
                         step="1"
                         defaultValue={hasOffer ? Math.round(claim.offerAmountCents! / 100) : undefined}

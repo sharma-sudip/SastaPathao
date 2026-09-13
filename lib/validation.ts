@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MIN_PRICE_DOLLARS } from "@/lib/pricing";
 
 // Shared client/server schemas -- the single source of truth for form shape,
 // used by both the client form components (for inline errors) and the
@@ -7,13 +8,18 @@ import { z } from "zod";
 // Dollars, as typed into a plain <input type="number"> -- converted to
 // cents (lib/pricing.ts's unit, matches the DB columns) wherever this is
 // actually used. Optional everywhere: pricing is a convenience on top of
-// the existing free-text `message`/`notes`, never required.
+// the existing free-text `message`/`notes`, never required -- but a price
+// that IS entered has to clear the $5 floor.
 export const priceDollarsSchema = z.preprocess(
   // An empty <input type="number"> submits "" -- z.coerce.number() would
   // otherwise turn that into 0 (a real, meant price) rather than "no price
   // entered at all".
   (val) => (val === "" || val == null ? undefined : val),
-  z.coerce.number().min(0, "Enter a price of $0 or more.").max(500, "Keep it under $500.").optional()
+  z.coerce
+    .number()
+    .min(MIN_PRICE_DOLLARS, `Enter at least $${MIN_PRICE_DOLLARS}, or leave it blank.`)
+    .max(500, "Keep it under $500.")
+    .optional()
 );
 
 export const postFormSchema = z.object({
@@ -41,7 +47,10 @@ export const claimFormSchema = z.object({
 
 export const counterOfferFormSchema = z.object({
   claimId: z.string().uuid(),
-  amount: z.coerce.number().min(0.01, "Enter a price greater than $0.").max(500, "Keep it under $500."),
+  amount: z.coerce
+    .number()
+    .min(MIN_PRICE_DOLLARS, `Enter at least $${MIN_PRICE_DOLLARS}.`)
+    .max(500, "Keep it under $500."),
 });
 
 export const messageFormSchema = z.object({

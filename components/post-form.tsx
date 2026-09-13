@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import dynamic from "next/dynamic";
 import { LocationPicker } from "@/components/location-picker";
-import { suggestedPriceCents } from "@/lib/pricing";
+import { suggestedPriceCents, MIN_PRICE_DOLLARS } from "@/lib/pricing";
 import type { PostActionState } from "@/lib/action-types";
 
 const DualLocationMap = dynamic(() => import("@/components/dual-location-map"), {
@@ -141,7 +141,7 @@ export function PostForm({
             id="askingPrice"
             name="askingPrice"
             type="number"
-            min="0"
+            min={MIN_PRICE_DOLLARS}
             max="500"
             step="1"
             value={askingPrice}
@@ -162,8 +162,8 @@ export function PostForm({
           <p className="mt-1 text-sm font-semibold text-danger">{fieldErrors.askingPrice}</p>
         ) : (
           <p className="mt-1 text-xs text-muted-foreground">
-            A rough suggestion based on distance — change it, clear it, or leave it for drivers to offer
-            whatever they think is fair.
+            A rough suggestion based on distance (${MIN_PRICE_DOLLARS} minimum) — change it, clear it, or
+            leave it for drivers to offer whatever they think is fair.
           </p>
         )}
       </div>
