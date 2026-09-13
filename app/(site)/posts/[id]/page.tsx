@@ -5,7 +5,7 @@ import { auth } from "@/auth";
 import { getPostById } from "@/lib/db/queries";
 import { formatDepartAt } from "@/lib/format-date";
 import { directionsUrl } from "@/lib/maps-url";
-import { formatCents, MIN_PRICE_DOLLARS } from "@/lib/pricing";
+import { formatCents, suggestedPriceCents, MIN_PRICE_DOLLARS } from "@/lib/pricing";
 import { Avatar } from "@/components/avatar";
 import { ContactCard } from "@/components/contact-card";
 import { ClaimList } from "@/components/claim-list";
@@ -32,6 +32,18 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
   // updates, so showing it here once FILLED would be stale/wrong.
   const confirmedClaim = post.claims.find((c) => c.status === "CONFIRMED");
   const displayPriceCents = confirmedClaim?.offerAmountCents ?? post.askingPriceCents;
+
+  // The rider not setting an asking price shouldn't leave a driver staring
+  // at a blank field -- fall back to the same heuristic the post form
+  // itself suggests, computed from the same coordinates, as a starting
+  // point for their offer. Only post.askingPriceCents (never this fallback)
+  // shows in the header above, though -- that badge is the rider's own
+  // stated price, not a guess made on their behalf.
+  const suggestedOfferCents =
+    post.askingPriceCents ??
+    (post.originLat != null && post.originLng != null && post.destLat != null && post.destLng != null
+      ? suggestedPriceCents({ lat: post.originLat, lng: post.originLng }, { lat: post.destLat, lng: post.destLng })
+      : null);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -112,7 +124,7 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
                 min={MIN_PRICE_DOLLARS}
                 max="500"
                 step="1"
-                defaultValue={post.askingPriceCents != null ? (post.askingPriceCents / 100).toFixed(0) : ""}
+                defaultValue={suggestedOfferCents != null ? (suggestedOfferCents / 100).toFixed(0) : ""}
                 placeholder="0"
                 className="w-full rounded-lg border border-border bg-background py-2 pl-6 pr-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
               />
