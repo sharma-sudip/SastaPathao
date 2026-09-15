@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Hand, Car, ArrowRight } from "lucide-react";
+import { Hand, Car, ArrowRight, Scissors } from "lucide-react";
 
 // Uber blue -- used as the one accent color on top of the black/white split,
 // same hex regardless of site theme since this screen deliberately ignores
@@ -42,7 +42,7 @@ const CHOICES = [
 // mix-blend-difference instead of a themed color.
 export function Splash() {
   return (
-    <section className="relative flex min-h-dvh w-full flex-col overflow-hidden sm:flex-row">
+    <section className="relative flex min-h-dvh w-full flex-col overflow-hidden">
       <span
         className="pointer-events-none absolute left-1/2 top-6 z-10 -translate-x-1/2 text-xs font-bold uppercase tracking-[0.3em] text-white sm:top-8 sm:text-sm"
         style={{ mixBlendMode: "difference" }}
@@ -50,42 +50,61 @@ export function Splash() {
         Sasta Pathao
       </span>
 
-      {CHOICES.map(({ href, icon: Icon, title, body, entrance, panel, iconBox, hoverGlow }) => (
-        <Link
-          key={href}
-          href={href}
-          className={`group relative flex flex-1 basis-1/2 items-center justify-center overflow-hidden px-8 py-20 ${entrance} ${panel}`}
+      <div className="relative flex flex-1 flex-col overflow-hidden sm:flex-row">
+        {CHOICES.map(({ href, icon: Icon, title, body, entrance, panel, iconBox, hoverGlow }) => (
+          <Link
+            key={href}
+            href={href}
+            className={`group relative flex flex-1 basis-1/2 items-center justify-center overflow-hidden px-8 py-20 ${entrance} ${panel}`}
+          >
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+              style={{ background: `radial-gradient(circle at 50% 50%, ${hoverGlow}, transparent 60%)` }}
+            />
+
+            <div className="relative flex flex-col items-center text-center transition-transform duration-300 ease-out group-hover:scale-[1.03]">
+              <span className={`mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border-2 ${iconBox}`}>
+                <Icon className="h-8 w-8" strokeWidth={2.25} />
+              </span>
+              <h1 className="text-4xl font-black uppercase leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
+                {title}
+              </h1>
+              <p className="mt-3 text-sm font-semibold uppercase tracking-wide opacity-70 sm:text-base">{body}</p>
+              <span
+                style={{ color: ACCENT }}
+                className="mt-6 inline-flex items-center gap-1.5 text-sm font-black uppercase tracking-wide transition-transform duration-300 group-hover:translate-x-1"
+              >
+                Let&apos;s go
+                <ArrowRight className="h-4 w-4" strokeWidth={3} />
+              </span>
+            </div>
+          </Link>
+        ))}
+
+        <div
+          aria-hidden
+          className="animate-badge-pulse pointer-events-none absolute left-1/2 top-1/2 z-10 flex h-16 w-16 items-center justify-center rounded-full border-4 border-black bg-white text-xs font-black uppercase tracking-wide text-black shadow-lg"
         >
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-            style={{ background: `radial-gradient(circle at 50% 50%, ${hoverGlow}, transparent 60%)` }}
-          />
+          or
+        </div>
+      </div>
 
-          <div className="relative flex flex-col items-center text-center transition-transform duration-300 ease-out group-hover:scale-[1.03]">
-            <span className={`mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border-2 ${iconBox}`}>
-              <Icon className="h-8 w-8" strokeWidth={2.25} />
-            </span>
-            <h1 className="text-4xl font-black uppercase leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
-              {title}
-            </h1>
-            <p className="mt-3 text-sm font-semibold uppercase tracking-wide opacity-70 sm:text-base">{body}</p>
-            <span
-              style={{ color: ACCENT }}
-              className="mt-6 inline-flex items-center gap-1.5 text-sm font-black uppercase tracking-wide transition-transform duration-300 group-hover:translate-x-1"
-            >
-              Let&apos;s go
-              <ArrowRight className="h-4 w-4" strokeWidth={3} />
-            </span>
-          </div>
-        </Link>
-      ))}
-
+      {/* Barber-partnership promo -- a slim strip rather than a flex-1 panel
+          so it never pushes the two main choices below the fold; see
+          lib/coupons.ts for how the coupon it's advertising actually gets
+          earned. */}
       <div
-        aria-hidden
-        className="animate-badge-pulse pointer-events-none absolute left-1/2 top-1/2 z-10 flex h-16 w-16 items-center justify-center rounded-full border-4 border-black bg-white text-xs font-black uppercase tracking-wide text-black shadow-lg"
+        className="relative z-10 flex shrink-0 items-center justify-center gap-3 px-4 py-3 text-center text-white sm:gap-4 sm:py-3.5"
+        style={{ background: `linear-gradient(90deg, #0a0a0a, ${ACCENT})` }}
       >
-        or
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10 sm:h-9 sm:w-9">
+          <Scissors className="h-4 w-4" strokeWidth={2.25} />
+        </span>
+        <p className="text-xs font-bold leading-tight sm:text-sm">
+          <span className="uppercase tracking-wide">New:</span> every completed ride earns{" "}
+          <span style={{ color: "#ffe27a" }}>$5 off</span> a haircut or facial (BYOK) at our partner barber.
+        </p>
       </div>
     </section>
   );
