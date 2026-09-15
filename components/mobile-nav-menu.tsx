@@ -12,7 +12,7 @@ const LINK_CLASS = "block px-4 py-2.5 text-sm font-semibold text-card-foreground
 // Profile isn't reachable at all below `sm` without this. Kept as its own
 // client component since <Nav> itself is an async server component and this
 // needs local open/close state.
-export function MobileNavMenu({ isSignedIn }: { isSignedIn: boolean }) {
+export function MobileNavMenu({ isSignedIn, isPartner = false }: { isSignedIn: boolean; isPartner?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -48,6 +48,11 @@ export function MobileNavMenu({ isSignedIn }: { isSignedIn: boolean }) {
           {isSignedIn && (
             <Link href="/account" onClick={() => setOpen(false)} className={LINK_CLASS}>
               Profile
+            </Link>
+          )}
+          {isPartner && (
+            <Link href="/redeem" onClick={() => setOpen(false)} className={LINK_CLASS}>
+              Redeem
             </Link>
           )}
         </div>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Car } from "lucide-react";
 import { auth, signOut } from "@/auth";
 import { isAdminEmail } from "@/lib/admin";
+import { isPartnerEmail } from "@/lib/partner";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileNavMenu } from "@/components/mobile-nav-menu";
 import { NotificationBell } from "@/components/notification-bell";
@@ -62,6 +63,14 @@ export async function Nav() {
                   Admin
                 </Link>
               )}
+              {isPartnerEmail(session.user.email) && (
+                <Link
+                  href="/redeem"
+                  className="hidden rounded-full px-3 py-1.5 font-semibold text-foreground/80 transition hover:bg-muted hover:text-foreground sm:inline-block"
+                >
+                  Redeem
+                </Link>
+              )}
               <form
                 action={async () => {
                   "use server";
@@ -85,7 +94,7 @@ export async function Nav() {
             </Link>
           )}
           <ThemeToggle />
-          <MobileNavMenu isSignedIn={!!session?.user} />
+          <MobileNavMenu isSignedIn={!!session?.user} isPartner={isPartnerEmail(session?.user?.email)} />
         </nav>
       </div>
     </header>
