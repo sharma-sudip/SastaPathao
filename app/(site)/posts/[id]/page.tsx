@@ -10,7 +10,7 @@ import { Avatar } from "@/components/avatar";
 import { ContactCard } from "@/components/contact-card";
 import { ClaimList } from "@/components/claim-list";
 import { PostMapSection } from "@/components/post-map-section";
-import { claimAction, cancelPostAction } from "./actions";
+import { claimAction, cancelPostAction, completeRideAction } from "./actions";
 
 export default async function PostDetailPage({ params }: PageProps<"/posts/[id]">) {
   const { id } = await params;
@@ -44,6 +44,13 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
     (post.originLat != null && post.originLng != null && post.destLat != null && post.destLng != null
       ? suggestedPriceCents({ lat: post.originLat, lng: post.originLng }, { lat: post.destLat, lng: post.destLng })
       : null);
+
+  // The driver (confirmed claimant, not the rider) is the one who marks a
+  // ride completed -- see lib/coupons.ts.
+  const isConfirmedDriver = !!viewerId && confirmedClaim?.claimantId === viewerId;
+  const rideIsDue = new Date() >= new Date(post.departAt);
+  const canComplete = isConfirmedDriver && post.status === "FILLED" && rideIsDue;
+  const rideNotYetDue = isConfirmedDriver && post.status === "FILLED" && !rideIsDue;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -101,6 +108,33 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
 
       <ClaimList post={post} viewerId={viewerId} />
 
+      {post.status === "COMPLETED" && (
+        <p className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+          🎉 Ride completed
+        </p>
+      )}
+
+      {canComplete && (
+        <form
+          action={completeRideAction.bind(null, post.id)}
+          className="rounded-xl border border-border bg-card p-4 shadow-sm"
+        >
+          <p className="text-sm text-muted-foreground">Done with this ride?</p>
+          <button
+            type="submit"
+            className="mt-2 rounded-full bg-gradient-primary px-5 py-2 text-sm font-bold text-primary-foreground shadow-sm transition hover:shadow-glow"
+          >
+            Mark ride as completed
+          </button>
+        </form>
+      )}
+
+      {rideNotYetDue && (
+        <p className="rounded-xl border border-dashed border-border bg-card p-4 text-sm text-muted-foreground">
+          You&apos;ll be able to mark this ride completed once it&apos;s departed.
+        </p>
+      )}
+
       {canClaim && (
         <form
           action={claimAction.bind(null, post.id)}
@@ -155,7 +189,7 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
         </p>
       )}
 
-      {isAuthor && post.status !== "FILLED" && post.status !== "CANCELLED" && (
+      {isAuthor && post.status !== "FILLED" && post.status !== "CANCELLED" && post.status !== "COMPLETED" && (
         <form action={cancelPostAction.bind(null, post.id)}>
           <button type="submit" className="text-sm font-semibold text-danger underline underline-offset-2 hover:opacity-80">
             Cancel this post

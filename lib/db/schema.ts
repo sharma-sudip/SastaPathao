@@ -90,6 +90,10 @@ export const postStatusEnum = pgEnum("post_status", [
   "OPEN",
   "PENDING",
   "FILLED",
+  // Distinct from FILLED: FILLED just means matched, not that the ride
+  // actually happened yet. The driver (confirmed claimant) marks a FILLED
+  // post COMPLETED once it has -- that's what triggers the rider's coupon.
+  "COMPLETED",
   "CANCELLED",
 ]);
 
@@ -209,6 +213,28 @@ export const notifications = pgTable("notification", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// One per completed ride, issued to the post's author (the rider) --
+// redeemable once, in person, by our partner barbershop (a haircut, or a
+// facial with the customer's own kit -- the shop doesn't cut women's hair).
+// `code` is what the QR code (emailed + shown in-app) encodes; the
+// redemption page looks the coupon up by it. See lib/coupons.ts.
+export const coupons = pgTable("coupon", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  postId: text("post_id")
+    .notNull()
+    .references(() => posts.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  code: text("code").notNull().unique(),
+  redeemed: boolean("redeemed").notNull().default(false),
+  redeemedAt: timestamp("redeemed_at"),
+  redeemedBy: text("redeemed_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // ---------------------------------------------------------------------------
 // Relations (used for query-builder joins in lib/db/queries.ts)
 // ---------------------------------------------------------------------------
@@ -219,11 +245,13 @@ export const usersRelations = relations(users, ({ many }) => ({
   messages: many(messages),
   pushSubscriptions: many(pushSubscriptions),
   notifications: many(notifications),
+  coupons: many(coupons),
 }));
 
 export const postsRelations = relations(posts, ({ one, many }) => ({
   author: one(users, { fields: [posts.authorId], references: [users.id] }),
   claims: many(claims),
+  coupons: many(coupons),
 }));
 
 export const claimsRelations = relations(claims, ({ one, many }) => ({
@@ -246,4 +274,10 @@ export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one })
 
 export const notificationsRelations = relations(notifications, ({ one }) => ({
   user: one(users, { fields: [notifications.userId], references: [users.id] }),
+}));
+
+export const couponsRelations = relations(coupons, ({ one }) => ({
+  post: one(posts, { fields: [coupons.postId], references: [posts.id] }),
+  user: one(users, { fields: [coupons.userId], references: [users.id] }),
+  redeemedByUser: one(users, { fields: [coupons.redeemedBy], references: [users.id] }),
 }));

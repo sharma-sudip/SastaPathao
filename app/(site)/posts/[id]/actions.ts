@@ -18,6 +18,9 @@ import { ClaimDeclinedEmail } from "@/emails/claim-declined-email";
 import { ClaimWithdrawnEmail } from "@/emails/claim-withdrawn-email";
 import { ClaimCounteredEmail } from "@/emails/claim-countered-email";
 import { NewMessageEmail } from "@/emails/new-message-email";
+import { CouponEarnedEmail } from "@/emails/coupon-earned-email";
+import { completeRide } from "@/lib/coupons";
+import { generateQrDataUrl } from "@/lib/qr";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -25,6 +28,11 @@ import { eq } from "drizzle-orm";
 async function siteUrl(postId: string) {
   const base = process.env.AUTH_URL ?? "http://localhost:3000";
   return `${base.replace(/\/$/, "")}/posts/${postId}`;
+}
+
+async function couponUrl(code: string) {
+  const base = process.env.AUTH_URL ?? "http://localhost:3000";
+  return `${base.replace(/\/$/, "")}/coupons/${code}`;
 }
 
 async function emailFor(userId: string) {
@@ -315,6 +323,46 @@ export async function sendMessageAction(claimId: string, body: string) {
   }
 
   return message;
+}
+
+export async function completeRideAction(postId: string) {
+  const session = await auth();
+  if (!session?.user) redirect(`/login?callbackUrl=/posts/${postId}`);
+
+  try {
+    const { riderId, couponCode } = await completeRide(session.user.id, postId);
+    const post = await getPostById(postId);
+    const rider = await emailFor(riderId);
+
+    if (post) {
+      const redeemUrl = await couponUrl(couponCode);
+      if (rider?.email) {
+        const qrDataUrl = await generateQrDataUrl(redeemUrl);
+        await sendEmailSafely({
+          from: EMAIL_FROM,
+          to: rider.email,
+          subject: "You earned a $5 coupon",
+          react: CouponEarnedEmail({
+            origin: post.origin,
+            destination: post.destination,
+            redeemUrl,
+            qrDataUrl,
+            couponCode,
+          }),
+        });
+      }
+      await notifyUser(riderId, {
+        title: "You earned $5 off 💈",
+        body: `Completed: ${post.origin} → ${post.destination}`,
+        url: redeemUrl,
+      });
+    }
+  } catch (err) {
+    console.error("completeRideAction failed:", err);
+  }
+
+  revalidatePath(`/posts/${postId}`);
+  revalidatePath("/dashboard");
 }
 
 export async function cancelPostAction(postId: string) {
