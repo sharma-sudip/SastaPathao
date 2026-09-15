@@ -43,14 +43,32 @@ const CHOICES = [
 export function Splash() {
   return (
     <section className="relative flex min-h-dvh w-full flex-col overflow-hidden">
-      <span
-        className="pointer-events-none absolute left-1/2 top-6 z-10 -translate-x-1/2 text-xs font-bold uppercase tracking-[0.3em] text-white sm:top-8 sm:text-sm"
-        style={{ mixBlendMode: "difference" }}
+      {/* Barber-partnership promo -- a slim strip rather than a flex-1 panel
+          so it never pushes the two main choices below the fold; see
+          lib/coupons.ts for how the coupon it's advertising actually gets
+          earned. Sits above the choices (rather than below, where it
+          originally shipped) so it's the first thing a visitor sees. */}
+      <div
+        className="relative z-10 flex shrink-0 items-center justify-center gap-3 px-4 py-3 text-center text-white sm:gap-4 sm:py-3.5"
+        style={{ background: `linear-gradient(90deg, #0a0a0a, ${ACCENT})` }}
       >
-        Sasta Pathao
-      </span>
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10 sm:h-9 sm:w-9">
+          <Scissors className="h-4 w-4" strokeWidth={2.25} />
+        </span>
+        <p className="text-xs font-bold leading-tight sm:text-sm">
+          <span className="uppercase tracking-wide">New:</span> every completed ride earns{" "}
+          <span style={{ color: "#ffe27a" }}>$5 off</span> a haircut or facial (BYOK) at our partner barber.
+        </p>
+      </div>
 
       <div className="relative flex flex-1 flex-col overflow-hidden sm:flex-row">
+        <span
+          className="pointer-events-none absolute left-1/2 top-6 z-10 -translate-x-1/2 text-xs font-bold uppercase tracking-[0.3em] text-white sm:top-8 sm:text-sm"
+          style={{ mixBlendMode: "difference" }}
+        >
+          Sasta Pathao
+        </span>
+
         {CHOICES.map(({ href, icon: Icon, title, body, entrance, panel, iconBox, hoverGlow }) => (
           <Link
             key={href}
@@ -88,23 +106,6 @@ export function Splash() {
         >
           or
         </div>
-      </div>
-
-      {/* Barber-partnership promo -- a slim strip rather than a flex-1 panel
-          so it never pushes the two main choices below the fold; see
-          lib/coupons.ts for how the coupon it's advertising actually gets
-          earned. */}
-      <div
-        className="relative z-10 flex shrink-0 items-center justify-center gap-3 px-4 py-3 text-center text-white sm:gap-4 sm:py-3.5"
-        style={{ background: `linear-gradient(90deg, #0a0a0a, ${ACCENT})` }}
-      >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10 sm:h-9 sm:w-9">
-          <Scissors className="h-4 w-4" strokeWidth={2.25} />
-        </span>
-        <p className="text-xs font-bold leading-tight sm:text-sm">
-          <span className="uppercase tracking-wide">New:</span> every completed ride earns{" "}
-          <span style={{ color: "#ffe27a" }}>$5 off</span> a haircut or facial (BYOK) at our partner barber.
-        </p>
       </div>
     </section>
   );
