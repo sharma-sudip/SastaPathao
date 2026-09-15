@@ -89,7 +89,7 @@ export default async function CouponPage({ params }: PageProps<"/coupons/[code]"
 
       {isOwner && !isPartner && (
         <p className="text-center text-xs text-muted-foreground">
-          Show this QR code to our partner barber to redeem it — good for a haircut, or a facial
+          Show this QR code at Guins Barber Shop to redeem it — good for a haircut, or a facial
           (bring your own kit).
         </p>
       )}

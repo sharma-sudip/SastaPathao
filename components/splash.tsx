@@ -57,7 +57,7 @@ export function Splash() {
         </span>
         <p className="text-xs font-bold leading-tight sm:text-sm">
           <span className="uppercase tracking-wide">New:</span> every completed ride earns{" "}
-          <span style={{ color: "#ffe27a" }}>$5 off</span> a haircut or facial (BYOK) at our partner barber.
+          <span style={{ color: "#ffe27a" }}>$5 off</span> a haircut or facial (BYOK) at Guins Barber Shop.
         </p>
       </div>
 

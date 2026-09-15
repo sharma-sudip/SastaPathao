@@ -214,7 +214,7 @@ export const notifications = pgTable("notification", {
 });
 
 // One per completed ride, issued to the post's author (the rider) --
-// redeemable once, in person, by our partner barbershop (a haircut, or a
+// redeemable once, in person, at our partner, Guins Barber Shop (a haircut, or a
 // facial with the customer's own kit -- the shop doesn't cut women's hair).
 // `code` is what the QR code (emailed + shown in-app) encodes; the
 // redemption page looks the coupon up by it. See lib/coupons.ts.

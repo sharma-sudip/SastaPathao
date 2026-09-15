@@ -18,8 +18,8 @@ export function CouponEarnedEmail({
     <EmailShell preview="You earned a $5 coupon" heading="You earned $5 off">
       <Text style={{ color: "#3a3f3a", fontSize: "15px" }}>
         Your ride from <strong>{origin}</strong> to <strong>{destination}</strong> is complete —
-        here&apos;s $5 off, on us, at our partner barber: a haircut, or a facial (bring your own
-        kit).
+        here&apos;s $5 off, on us, at <strong>Guins Barber Shop</strong>: a haircut, or a facial
+        (bring your own kit).
       </Text>
       <Text style={{ color: "#3a3f3a", fontSize: "15px" }}>Show this code to redeem it:</Text>
       <Img

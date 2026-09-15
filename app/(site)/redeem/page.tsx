@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { isPartnerEmail } from "@/lib/partner";
 import { lookUpCouponAction } from "./actions";
 
-// Entry point for our partner barber: scanning a rider's QR with their
+// Entry point for our partner, Guins Barber Shop: scanning a rider's QR with their
 // phone's camera app opens /coupons/[code] directly (the QR encodes that
 // full URL), but there was no way to redeem a coupon if the QR won't scan
 // or the code was read out loud instead -- this is that fallback, and the
