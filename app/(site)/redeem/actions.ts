@@ -11,10 +11,13 @@ import { isPartnerEmail } from "@/lib/partner";
 export async function lookUpCouponAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect(`/login?callbackUrl=/redeem`);
-  if (!isPartnerEmail(session.user.email)) throw new Error("Forbidden.");
+  // Not a user-facing case in normal use -- the page itself already
+  // redirects a non-partner away before this form ever renders -- but
+  // redirect rather than throw so a stale session doesn't crash the page.
+  if (!isPartnerEmail(session.user.email)) redirect("/dashboard");
 
   const code = String(formData.get("code") ?? "").trim();
-  if (!code) throw new Error("Enter a coupon code.");
+  if (!code) redirect("/redeem?error=empty");
 
   redirect(`/coupons/${encodeURIComponent(code)}`);
 }

@@ -8,10 +8,13 @@ import { lookUpCouponAction } from "./actions";
 // full URL), but there was no way to redeem a coupon if the QR won't scan
 // or the code was read out loud instead -- this is that fallback, and the
 // only thing linked from the nav for the partner account.
-export default async function RedeemPage() {
+export default async function RedeemPage({ searchParams }: PageProps<"/redeem">) {
   const session = await auth();
   if (!session?.user) redirect("/login?callbackUrl=/redeem");
   if (!isPartnerEmail(session.user.email)) redirect("/dashboard");
+
+  const params = await searchParams;
+  const hasError = params?.error === "empty";
 
   return (
     <div className="mx-auto max-w-sm space-y-4">
@@ -21,6 +24,11 @@ export default async function RedeemPage() {
           Scan a rider&apos;s QR code with your phone&apos;s camera, or enter their code below.
         </p>
       </div>
+      {hasError && (
+        <p className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm font-semibold text-danger">
+          Enter a coupon code first.
+        </p>
+      )}
       <form action={lookUpCouponAction} className="space-y-2 rounded-xl border border-border bg-card p-4 shadow-sm">
         <label htmlFor="code" className="block text-sm font-medium text-foreground">
           Coupon code
@@ -29,6 +37,7 @@ export default async function RedeemPage() {
           id="code"
           name="code"
           type="text"
+          required
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
