@@ -164,6 +164,23 @@ body {
   animation: badge-pulse 2.4s ease-in-out infinite;
 }
 
+/* Plain opacity fade for full-screen overlays (promo-overlay.tsx) --
+   unlike fade-in-up above, no translate: the overlay covers the whole
+   viewport, so sliding it in would just move its edges past the visible
+   area rather than reveal anything. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.35s ease-out both;
+}
+
 /* Leaflet tiles are drawn as raster images -- inverting + hue-rotating the
    tile layer is the standard trick for a passable dark map without a
    separate (often paid) dark tile provider. Markers/popups sit in their own

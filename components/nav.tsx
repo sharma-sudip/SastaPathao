@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Car } from "lucide-react";
 import { auth, signOut } from "@/auth";
 import { isAdminEmail } from "@/lib/admin";
 import { isPartnerEmail } from "@/lib/partner";
@@ -7,6 +6,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileNavMenu } from "@/components/mobile-nav-menu";
 import { NotificationBell } from "@/components/notification-bell";
 import { Avatar } from "@/components/avatar";
+import { Logo } from "@/components/logo";
 
 export async function Nav() {
   const session = await auth();
@@ -20,11 +20,8 @@ export async function Nav() {
     // notification/menu dropdowns) painted it over the header instead.
     <header className="sticky top-0 z-[1100] border-b border-border bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-        <Link href="/" className="flex items-center gap-2 text-lg font-bold text-foreground">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-primary text-primary-foreground shadow-sm">
-            <Car className="h-4 w-4" strokeWidth={2.5} />
-          </span>
-          Sasta Pathao
+        <Link href="/" className="text-foreground">
+          <Logo />
         </Link>
         <nav className="relative flex items-center gap-1 text-sm sm:gap-2">
           <Link
