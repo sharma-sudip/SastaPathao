@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 A free, open-source ride-coordination board for the Youngstown, Ohio area — post a ride request
 (now or scheduled ahead), and another user proposes to fill it. No payments are handled anywhere.
 See README.md for the full stack rationale and setup steps (Next.js/App Router, Neon Postgres via
-Drizzle, Auth.js v5 passwordless email, Resend, Web Push, Google Maps/Photon geocoding, Tailwind).
+Drizzle, Auth.js v5 passwordless email, Resend, Web Push, Tailwind).
 
 ## Commands
 
@@ -36,7 +36,7 @@ off the root layout (`app/layout.tsx`) with no nav/footer. Every other route liv
 `<MobileTabBar>`. When adding a new top-level page, put it under `app/(site)/` unless it's
 deliberately chrome-less like the splash.
 
-**Data model** (`lib/db/schema.ts`): `post` (origin/destination with optional lat/lng, a
+**Data model** (`lib/db/schema.ts`): `post` (free-text origin/destination, a
 `departAt` that can be in the future, `status`: `OPEN → PENDING → FILLED`/`CANCELLED`) → `claim`
 (a user volunteering to fill a post; multiple claimants can be `PROPOSED` at once; the author
 `CONFIRMED`s one, which auto-declines the rest, or `DECLINED`s/the claimant `WITHDRAWN`s) →
@@ -66,11 +66,15 @@ and sets `Host` itself. A brand-new account is routed to `/account` (`pages.newU
 name/phone before anything else; `requests/new` and the claim action independently re-check
 profile completeness in case that step is abandoned.
 
-**Maps/geocoding**: `lib/geocode.ts` proxies either Google (Places Autocomplete + Geocoding) or
-Photon (OSM-based, free/no-signup), selected purely by whether `GOOGLE_MAPS_API_KEY` is set,
-through `app/api/geocode/*` route handlers — client components never call either provider
-directly. Map *tiles* (`location-picker-map.tsx`, `post-map.tsx`, `feed-map.tsx`) are Google-only
-right now (`@vis.gl/react-google-maps`); there's no Photon-equivalent fallback for tiles.
+**No maps or geocoding**: `origin`/`destination` on a post are plain free text, typed by the
+poster with no autocomplete, no coordinates, and no map display anywhere. This app used to
+geocode them (Photon by default, an optional Google comparison) to show an interactive map and
+suggest a distance-based price — removed because the free geocoder's address-level accuracy was
+poor enough to cause real confusion (a pin landing near, not on, the actual address), and taking
+on a billed Google API key wasn't worth it for a non-revenue app. See git history if reviving
+this. The post detail page's "Get directions" link (`lib/maps-url.ts`) still works without any of
+this — it just hands the two free-text addresses to a `google.com/maps/dir/` URL and lets Google
+Maps geocode them itself when the link opens.
 
 **Server actions**: mutations live in colocated `actions.ts` files next to the page that uses
 them (e.g. `app/(site)/requests/new/actions.ts`, `app/(site)/posts/[id]/actions.ts`), returning

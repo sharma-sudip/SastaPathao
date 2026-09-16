@@ -5,11 +5,10 @@ import { auth } from "@/auth";
 import { getPostById } from "@/lib/db/queries";
 import { formatDepartAt, formatRelativeTime } from "@/lib/format-date";
 import { directionsUrl } from "@/lib/maps-url";
-import { formatCents, suggestedPriceCents, MIN_PRICE_DOLLARS } from "@/lib/pricing";
+import { formatCents, MIN_PRICE_DOLLARS } from "@/lib/pricing";
 import { Avatar } from "@/components/avatar";
 import { ContactCard } from "@/components/contact-card";
 import { ClaimList } from "@/components/claim-list";
-import { PostMapSection } from "@/components/post-map-section";
 import { claimAction, cancelPostAction, completeRideAction } from "./actions";
 
 export default async function PostDetailPage({ params }: PageProps<"/posts/[id]">) {
@@ -32,18 +31,6 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
   // updates, so showing it here once FILLED would be stale/wrong.
   const confirmedClaim = post.claims.find((c) => c.status === "CONFIRMED");
   const displayPriceCents = confirmedClaim?.offerAmountCents ?? post.askingPriceCents;
-
-  // The rider not setting an asking price shouldn't leave a driver staring
-  // at a blank field -- fall back to the same heuristic the post form
-  // itself suggests, computed from the same coordinates, as a starting
-  // point for their offer. Only post.askingPriceCents (never this fallback)
-  // shows in the header above, though -- that badge is the rider's own
-  // stated price, not a guess made on their behalf.
-  const suggestedOfferCents =
-    post.askingPriceCents ??
-    (post.originLat != null && post.originLng != null && post.destLat != null && post.destLng != null
-      ? suggestedPriceCents({ lat: post.originLat, lng: post.originLng }, { lat: post.destLat, lng: post.destLng })
-      : null);
 
   // The driver (confirmed claimant, not the rider) is the one who marks a
   // ride completed -- see lib/coupons.ts.
@@ -76,10 +63,7 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
           Requested by {post.author?.name ?? "a neighbor"} · {formatRelativeTime(post.createdAt)}
         </p>
         <a
-          href={directionsUrl(
-            { label: post.origin, lat: post.originLat, lng: post.originLng },
-            { label: post.destination, lat: post.destLat, lng: post.destLng }
-          )}
+          href={directionsUrl(post.origin, post.destination)}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3.5 py-1.5 text-sm font-bold text-foreground shadow-sm transition hover:border-primary hover:bg-muted"
@@ -91,17 +75,6 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
 
       {post.notes && (
         <p className="rounded-xl border border-border bg-card p-4 text-card-foreground">{post.notes}</p>
-      )}
-
-      {post.originLat != null && post.originLng != null && (
-        <PostMapSection
-          origin={{ lat: post.originLat, lng: post.originLng, label: post.origin }}
-          destination={
-            post.destLat != null && post.destLng != null
-              ? { lat: post.destLat, lng: post.destLng, label: post.destination }
-              : null
-          }
-        />
       )}
 
       <ContactCard postId={post.id} viewerId={viewerId} />
@@ -158,7 +131,7 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
                 min={MIN_PRICE_DOLLARS}
                 max="500"
                 step="1"
-                defaultValue={suggestedOfferCents != null ? (suggestedOfferCents / 100).toFixed(0) : ""}
+                defaultValue={post.askingPriceCents != null ? (post.askingPriceCents / 100).toFixed(0) : ""}
                 placeholder="0"
                 className="w-full rounded-lg border border-border bg-background py-2 pl-6 pr-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
               />

@@ -17,12 +17,6 @@ project, not a Pathao product.
 - [Resend](https://resend.com) + [React Email](https://react.email) for transactional email
 - [Web Push](https://web.dev/push-notifications-overview/) (VAPID) for optional browser
   notifications — a self-generated keypair, not a third-party account/API key
-- Maps: [Leaflet](https://leafletjs.com) + OpenStreetMap tiles, free/no API key. Address
-  search/geocoding (`lib/geocode.ts`) uses [Photon](https://photon.komoot.io) (free, no signup)
-  by default, or Google's Places/Geocoding APIs if `GOOGLE_MAPS_API_KEY` is set (better
-  autocomplete quality). Google Maps' own JS SDK briefly stood in for the map *tiles* too (see
-  git history) but was reverted — its free "Demo Key" throws uncaught errors once its daily quota
-  is hit, badly enough to crash the whole page for a visitor, not just the map
 - [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) for profile picture uploads
 - Tailwind CSS
 
@@ -41,43 +35,38 @@ project, not a Pathao product.
    free at [resend.com](https://resend.com) and grab an API key. Without this set, the app still
    runs: sign-in links and notifications are logged to the server console instead of emailed.
 
-4. **(Optional) Get a Google Maps key** — only improves address search/autocomplete quality
-   (Photon is the free, no-signup default). Map tiles don't use this at all — see the Stack
-   section above.
-
-5. **(Optional) Create a Vercel Blob store** — for profile picture uploads. In your Vercel
+4. **(Optional) Create a Vercel Blob store** — for profile picture uploads. In your Vercel
    project's Storage tab, create a free Blob store; it injects `BLOB_READ_WRITE_TOKEN`
    automatically once deployed. For local dev, copy the token it shows you, or run
    `vercel env pull .env.local` once the project's linked. Without it, uploading a photo just
    errors — everything else in the app still works.
 
-6. **Configure environment variables**
+5. **Configure environment variables**
 
    ```bash
    cp .env.example .env.local
    ```
 
    Fill in `DATABASE_URL` (from Neon), `RESEND_API_KEY` and `EMAIL_FROM` (from Resend),
-   optionally `GOOGLE_MAPS_API_KEY` (from above), `BLOB_READ_WRITE_TOKEN` (from the Blob store
-   above), and generate an `AUTH_SECRET`:
+   `BLOB_READ_WRITE_TOKEN` (from the Blob store above), and generate an `AUTH_SECRET`:
 
    ```bash
    npx auth secret
    ```
 
-7. **Run the database migration**
+6. **Run the database migration**
 
    ```bash
    npm run db:migrate
    ```
 
-8. **(Optional) Seed sample data** for local testing:
+7. **(Optional) Seed sample data** for local testing:
 
    ```bash
    npm run db:seed
    ```
 
-9. **Start the dev server**
+8. **Start the dev server**
 
    ```bash
    npm run dev
@@ -107,8 +96,8 @@ project, not a Pathao product.
   (the ride board at `/board`, sign-in, dashboard, etc.) lives under the `app/(site)/` route
   group, which is what adds the normal nav + footer layout; see `app/(site)/layout.tsx` vs the
   bare root `app/layout.tsx`.
-- **Posts**: a ride request (someone needs a ride), each with an origin/destination (label +
-  optional map coordinates), a `departAt` time that can be in the future, and a status
+- **Posts**: a ride request (someone needs a ride), each with a free-text origin/destination,
+  a `departAt` time that can be in the future, and a status
   (`OPEN` → `PENDING` → `FILLED`/`CANCELLED`). There's no separate "offer a ride" post type —
   drivers respond to open requests instead of posting their own routes ahead of time.
 - **Claims**: another user volunteers to fill a request (`PROPOSED`) — multiple people can
@@ -144,22 +133,21 @@ project, not a Pathao product.
   reports as gone (endpoint uninstalled, permission revoked, etc.) gets deleted automatically
   rather than retried forever. Both `notifyUser` and email are best-effort — never throw, never
   block the action that triggered them.
-- **Maps**: `lib/geocode.ts` proxies either Google (Places Autocomplete + Geocoding) or Photon
-  (komoot's free, OSM-based geocoder), whichever `GOOGLE_MAPS_API_KEY` selects, through
-  `app/api/geocode/*` route handlers. `components/location-picker.tsx` uses it for
-  search-as-you-type; the pickup field also defaults to the browser's geolocation on mount
-  (`useCurrentLocationAsDefault`, reverse-geocoded through the same endpoint) if permission is
-  granted, but stays a normal editable/searchable field either way. Map *tiles*
-  (`dual-location-map.tsx`, `post-map.tsx`, `feed-map.tsx`) are always Leaflet + OpenStreetMap,
-  regardless of that key — see the Stack section above for why Google's own Maps JS SDK isn't
-  used for tiles.
+- **No maps or geocoding**: `origin`/`destination` are plain free-text fields, no autocomplete,
+  no coordinates, no map display. This app used to geocode them (Photon by default, an optional
+  Google comparison) for an interactive map and a distance-based price suggestion — removed since
+  the free geocoder's address-level accuracy was poor enough to cause real confusion, and a
+  billed Google key wasn't worth it for a non-revenue app (see git history). The post detail
+  page's "Get directions" link (`lib/maps-url.ts`) still works without any of this — it hands the
+  two free-text addresses straight to a `google.com/maps/dir/` URL, which geocodes them itself
+  when the link opens.
 
 ## Verifying changes locally
 
 There's no automated test suite (consistent with the rest of this repo) — verify manually:
 
 1. `npm run dev` and walk through the relevant page(s) by hand.
-2. `npm run db:seed` to populate a few sample posts, so the feed (list and map view) isn't empty.
+2. `npm run db:seed` to populate a few sample posts, so the feed isn't empty.
 3. `npm run db:studio` to visually confirm post/claim status transitions after each UI action
    (e.g. confirming a claim should flip the post to `FILLED` and any sibling claims to
    `DECLINED`).

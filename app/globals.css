@@ -180,21 +180,3 @@ body {
 .animate-fade-in {
   animation: fade-in 0.35s ease-out both;
 }
-
-/* Leaflet tiles are drawn as raster images -- inverting + hue-rotating the
-   tile layer is the standard trick for a passable dark map without a
-   separate (often paid) dark tile provider. Markers/popups sit in their own
-   pane and get the filter cancelled out so they stay legible. */
-.dark .leaflet-tile-pane {
-  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
-}
-
-.dark .leaflet-popup-content-wrapper,
-.dark .leaflet-popup-tip {
-  background: var(--card);
-  color: var(--card-foreground);
-}
-
-.dark .leaflet-container {
-  background: var(--muted);
-}

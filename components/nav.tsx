@@ -12,12 +12,10 @@ export async function Nav() {
   const session = await auth();
 
   return (
-    // z-[1100]: Leaflet's own panes/controls go up to z-index 1000 (same
-    // reason location-picker.tsx's address dropdown needs it) -- this
-    // header is `sticky`, which puts it in the same root-level stacking
-    // order as an in-page Leaflet map, not automatically above it. Without
-    // this, scrolling a map's tile pane up under the sticky header (or its
-    // notification/menu dropdowns) painted it over the header instead.
+    // z-[1100]: high enough to stay above ordinary page content (this
+    // header is `sticky`) and above its own notification/menu dropdowns'
+    // siblings -- see photo-lightbox.tsx for why it in turn needs to sit
+    // above this.
     <header className="sticky top-0 z-[1100] border-b border-border bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <Link href="/" className="text-foreground">

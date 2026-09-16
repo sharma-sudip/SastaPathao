@@ -3,7 +3,6 @@ import {
   text,
   timestamp,
   integer,
-  doublePrecision,
   boolean,
   primaryKey,
   pgEnum,
@@ -116,20 +115,21 @@ export const posts = pgTable("post", {
   authorId: text("author_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  // Free text only -- no coordinates. This app used to geocode these
+  // (Photon by default, an optional Google comparison) to show a map and
+  // pre-fill a distance-based price suggestion, but Photon's address-level
+  // accuracy in this area was poor enough (pin often landing near, not on,
+  // the actual address) to cause real confusion, and going all-in on a
+  // billed Google key wasn't worth it for a non-revenue app. Removed
+  // entirely rather than keep a half-working map around -- see git history.
   origin: text("origin").notNull(),
-  originLat: doublePrecision("origin_lat"),
-  originLng: doublePrecision("origin_lng"),
   destination: text("destination").notNull(),
-  destLat: doublePrecision("dest_lat"),
-  destLng: doublePrecision("dest_lng"),
   // Can be in the future -- this is the "schedule a pickup" field.
   departAt: timestamp("depart_at").notNull(),
   notes: text("notes"),
-  // Optional -- pre-filled on the post form from a rough $/mile heuristic
-  // (lib/pricing.ts) against the straight-line origin/destination distance,
-  // but freely editable, and can be left blank entirely (some posts just
-  // aren't priced). Purely a suggested/agreed number for coordination --
-  // never processes payment, see the footer disclaimer.
+  // Optional -- freely editable, and can be left blank entirely (some posts
+  // just aren't priced). Purely a suggested/agreed number for coordination
+  // -- never processes payment, see the footer disclaimer.
   askingPriceCents: integer("asking_price_cents"),
   status: postStatusEnum("status").notNull().default("OPEN"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

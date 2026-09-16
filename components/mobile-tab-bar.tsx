@@ -11,9 +11,8 @@ export async function MobileTabBar() {
   const session = await auth();
 
   return (
-    // z-[1100]: same reasoning as <Nav>'s header -- this is `fixed`, so it's
-    // compared directly against an in-page Leaflet map's own z-index (up to
-    // 1000) rather than sitting above it automatically.
+    // z-[1100]: same reasoning as <Nav>'s header -- stays above ordinary
+    // page content since this is `fixed`.
     <nav
       className="fixed inset-x-0 bottom-0 z-[1100] flex border-t-2 border-border bg-card/95 backdrop-blur-md sm:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}

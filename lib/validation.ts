@@ -24,11 +24,7 @@ export const priceDollarsSchema = z.preprocess(
 
 export const postFormSchema = z.object({
   origin: z.string().trim().min(2, "Enter a pickup location.").max(200),
-  originLat: z.coerce.number().min(-90).max(90).optional(),
-  originLng: z.coerce.number().min(-180).max(180).optional(),
   destination: z.string().trim().min(2, "Enter a destination.").max(200),
-  destLat: z.coerce.number().min(-90).max(90).optional(),
-  destLng: z.coerce.number().min(-180).max(180).optional(),
   departAt: z
     .string()
     .min(1, "Choose a date and time.")

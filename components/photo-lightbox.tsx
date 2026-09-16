@@ -110,10 +110,10 @@ export function PhotoLightbox({ src, alt, onClose }: { src: string; alt: string;
   // sliver of the screen when opened from an avatar inside that header.
   return createPortal(
     <div
-      // z-[1200]: Leaflet's own panes/controls (dual-location-map.tsx et al.)
-      // go up to z-index 1000 -- z-50 lost to them once this was portaled to
-      // document.body, a plain sibling of the map in the stacking order
-      // rather than something rendered after it in the same DOM subtree.
+      // z-[1200]: has to clear <Nav>'s sticky header (z-[1100]) -- z-50 lost
+      // to it once this was portaled to document.body, a plain sibling of
+      // the header in the stacking order rather than something rendered
+      // after it in the same DOM subtree.
       className="fixed inset-0 z-[1200] flex touch-none items-center justify-center bg-black/90"
       onClick={() => scale === 1 && onClose()}
     >
