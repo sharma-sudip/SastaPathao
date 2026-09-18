@@ -1,6 +1,7 @@
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { MobileTabBar } from "@/components/mobile-tab-bar";
+import { GoogleMapsProvider } from "@/components/google-maps-provider";
 
 // Everything except the splash screen at "/" lives under this route group, so
 // it gets the normal app chrome (nav + footer + centered content column). The
@@ -8,11 +9,11 @@ import { MobileTabBar } from "@/components/mobile-tab-bar";
 // since it's meant to be the only thing on screen.
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <GoogleMapsProvider>
       <Nav />
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-24 pt-8 sm:pb-8">{children}</main>
       <Footer />
       <MobileTabBar />
-    </>
+    </GoogleMapsProvider>
   );
 }

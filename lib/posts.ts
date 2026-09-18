@@ -19,7 +19,11 @@ export async function createPost(authorId: string, values: PostFormValues) {
     .values({
       authorId,
       origin: values.origin,
+      originLat: values.originLat ?? null,
+      originLng: values.originLng ?? null,
       destination: values.destination,
+      destLat: values.destLat ?? null,
+      destLng: values.destLng ?? null,
       // values.departAt is a <input type="datetime-local"> value -- no
       // timezone attached, so `new Date(...)` would silently misinterpret
       // it using the server's zone (UTC on Vercel) instead of the Eastern

@@ -3,6 +3,7 @@ import {
   text,
   timestamp,
   integer,
+  doublePrecision,
   boolean,
   primaryKey,
   pgEnum,
@@ -115,15 +116,19 @@ export const posts = pgTable("post", {
   authorId: text("author_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  // Free text only -- no coordinates. This app used to geocode these
-  // (Photon by default, an optional Google comparison) to show a map and
-  // pre-fill a distance-based price suggestion, but Photon's address-level
-  // accuracy in this area was poor enough (pin often landing near, not on,
-  // the actual address) to cause real confusion, and going all-in on a
-  // billed Google key wasn't worth it for a non-revenue app. Removed
-  // entirely rather than keep a half-working map around -- see git history.
+  // google-maps branch: coordinates are geocoded via Google (lib/geocode.ts)
+  // once the poster picks/confirms an address, not typed directly -- origin
+  // (destination) text is still the free-text label shown everywhere; the
+  // *Lat/*Lng columns exist for the map, the drawn route, and the
+  // distance-based price suggestion (lib/pricing.ts). Nullable: a post
+  // typed without ever touching the map still just has null coordinates,
+  // same as main.
   origin: text("origin").notNull(),
+  originLat: doublePrecision("origin_lat"),
+  originLng: doublePrecision("origin_lng"),
   destination: text("destination").notNull(),
+  destLat: doublePrecision("dest_lat"),
+  destLng: doublePrecision("dest_lng"),
   // Can be in the future -- this is the "schedule a pickup" field.
   departAt: timestamp("depart_at").notNull(),
   notes: text("notes"),

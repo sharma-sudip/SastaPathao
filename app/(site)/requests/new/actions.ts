@@ -20,7 +20,11 @@ export async function createRequestAction(
 
   const parsed = postFormSchema.safeParse({
     origin: formData.get("origin"),
+    originLat: formData.get("originLat") || undefined,
+    originLng: formData.get("originLng") || undefined,
     destination: formData.get("destination"),
+    destLat: formData.get("destinationLat") || undefined,
+    destLng: formData.get("destinationLng") || undefined,
     departAt: formData.get("departAt"),
     notes: formData.get("notes") ?? "",
     askingPrice: formData.get("askingPrice") ?? "",

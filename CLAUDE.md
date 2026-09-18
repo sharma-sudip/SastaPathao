@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 A free, open-source ride-coordination board for the Youngstown, Ohio area — post a ride request
 (now or scheduled ahead), and another user proposes to fill it. No payments are handled anywhere.
 See README.md for the full stack rationale and setup steps (Next.js/App Router, Neon Postgres via
-Drizzle, Auth.js v5 passwordless email, Resend, Web Push, Tailwind).
+Drizzle, Auth.js v5 passwordless email, Resend, Web Push, Google Maps, Tailwind).
 
 ## Commands
 
@@ -36,7 +36,7 @@ off the root layout (`app/layout.tsx`) with no nav/footer. Every other route liv
 `<MobileTabBar>`. When adding a new top-level page, put it under `app/(site)/` unless it's
 deliberately chrome-less like the splash.
 
-**Data model** (`lib/db/schema.ts`): `post` (free-text origin/destination, a
+**Data model** (`lib/db/schema.ts`): `post` (origin/destination with optional lat/lng, a
 `departAt` that can be in the future, `status`: `OPEN → PENDING → FILLED`/`CANCELLED`) → `claim`
 (a user volunteering to fill a post; multiple claimants can be `PROPOSED` at once; the author
 `CONFIRMED`s one, which auto-declines the rest, or `DECLINED`s/the claimant `WITHDRAWN`s) →
@@ -76,15 +76,40 @@ and sets `Host` itself. A brand-new account is routed to `/account` (`pages.newU
 name/phone before anything else; `requests/new` and the claim action independently re-check
 profile completeness in case that step is abandoned.
 
-**No maps or geocoding**: `origin`/`destination` on a post are plain free text, typed by the
-poster with no autocomplete, no coordinates, and no map display anywhere. This app used to
-geocode them (Photon by default, an optional Google comparison) to show an interactive map and
-suggest a distance-based price — removed because the free geocoder's address-level accuracy was
-poor enough to cause real confusion (a pin landing near, not on, the actual address), and taking
-on a billed Google API key wasn't worth it for a non-revenue app. See git history if reviving
-this. The post detail page's "Get directions" link (`lib/maps-url.ts`) still works without any of
-this — it just hands the two free-text addresses to a `google.com/maps/dir/` URL and lets Google
-Maps geocode them itself when the link opens.
+**Maps/geocoding (`google-maps` branch only — `main` has none of this, see its CLAUDE.md)**:
+this branch reintroduces coordinates, an interactive map, and a drawn route, all Google-only —
+there's no free-tier fallback here, it needs a real, billing-enabled key. Two *separate* API
+keys, restricted differently on purpose:
+- `GOOGLE_MAPS_API_KEY` (server-only, never sent to the browser): Places API (New) + Geocoding
+  API + Directions API, called only from our own `app/api/geocode/*` routes
+  (`lib/geocode.ts`'s `searchAddress`/`reverseGeocode`, `lib/directions.ts`'s `getDrivingRoute`).
+  Restrict it to just those 3 APIs; no HTTP referrer restriction (server-to-server calls have no
+  browser referrer to check).
+- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (public, loads via a `<script>` tag — visible in the page
+  source, same as any client-side Google Maps key): Maps JavaScript API only, for map
+  tiles/pins/route-line rendering (`components/google-maps-provider.tsx`, wrapping
+  `app/(site)/layout.tsx`). Restrict it to just that one API and lock it down with an HTTP
+  referrer restriction instead of relying on secrecy.
+
+`components/dual-location-map.tsx` (post form's shared click-to-place map), `post-map.tsx` +
+`post-map-section.tsx` (post detail's map, which also fetches and draws the driving route), and
+`feed-map.tsx` (board's map view) all use `@vis.gl/react-google-maps`'s `<Map>`/legacy
+`<Marker>`/`<Polyline>` — deliberately legacy `Marker`, not `AdvancedMarker`, so this doesn't also
+need a Map ID configured in Google Cloud Console. `GoogleMapsProvider` always renders
+`<APIProvider>`, even with an empty key — `<Map>` throws if it ever renders with no provider
+ancestor at all, regardless of whether the script load itself succeeds, so this is what keeps a
+missing/invalid key a graceful "map won't load" (visibly, via Google's own error dialog) rather
+than a crashed page.
+
+`lib/pricing.ts`'s distance-based price suggestion is deliberately still the straight-line
+(haversine) estimate, not real driving distance from the Directions call above — it needs to
+update instantly as someone types/picks an address on the post form, before a post (and any
+reason to call Directions, which only happens for an existing post) exists at all.
+
+The post detail page's "Get directions" link (`lib/maps-url.ts`) is unrelated to all of this and
+unchanged from `main` — it just hands the two addresses to a `google.com/maps/dir/` URL and lets
+Google Maps geocode them itself when the link opens, no API key needed. That's "take me there";
+the drawn route on the map is "show me the route".
 
 **Server actions**: mutations live in colocated `actions.ts` files next to the page that uses
 them (e.g. `app/(site)/requests/new/actions.ts`, `app/(site)/posts/[id]/actions.ts`), returning

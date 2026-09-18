@@ -79,7 +79,11 @@ export async function getOwnPostForRepeat(postId: string, authorId: string) {
   const [row] = await db
     .select({
       origin: posts.origin,
+      originLat: posts.originLat,
+      originLng: posts.originLng,
       destination: posts.destination,
+      destLat: posts.destLat,
+      destLng: posts.destLng,
       notes: posts.notes,
       askingPriceCents: posts.askingPriceCents,
     })
