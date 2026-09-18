@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
-import { Map, Marker, useMap } from "@vis.gl/react-google-maps";
+import { Map, Marker, Polyline, useMap } from "@vis.gl/react-google-maps";
 
 type LatLng = { lat: number; lng: number };
 
@@ -32,6 +32,43 @@ export default function DualLocationMap({
   // this component already only ever does (next/dynamic ssr:false above),
   // so there's no hydration-mismatch risk to guard against here.
   const { resolvedTheme } = useTheme();
+  const [routePolyline, setRoutePolyline] = useState<string | null>(null);
+  const originLat = origin?.lat;
+  const originLng = origin?.lng;
+  const destLat = destination?.lat;
+  const destLng = destination?.lng;
+
+  // Live route preview while picking, same Directions call the post detail
+  // page makes for an already-saved post (post-map-section.tsx) -- fetched
+  // here instead since this shared map is what's visible during creation.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRoute() {
+      if (originLat == null || originLng == null || destLat == null || destLng == null) {
+        if (!cancelled) setRoutePolyline(null);
+        return;
+      }
+      try {
+        const params = new URLSearchParams({
+          originLat: String(originLat),
+          originLng: String(originLng),
+          destLat: String(destLat),
+          destLng: String(destLng),
+        });
+        const res = await fetch(`/api/geocode/directions?${params}`);
+        const data = await res.json();
+        if (!cancelled) setRoutePolyline(data.route?.polyline ?? null);
+      } catch {
+        if (!cancelled) setRoutePolyline(null);
+      }
+    }
+
+    loadRoute();
+    return () => {
+      cancelled = true;
+    };
+  }, [originLat, originLng, destLat, destLng]);
 
   // Keep both pins in view once both are set; otherwise just pan to
   // whichever one exists yet. Runs whenever a coordinate actually changes,
@@ -66,6 +103,7 @@ export default function DualLocationMap({
     >
       {origin && <Marker position={origin} label="A" title="Pickup" />}
       {destination && <Marker position={destination} label="B" title="Destination" />}
+      {routePolyline && <Polyline encodedPath={routePolyline} strokeColor="#276ef1" strokeOpacity={0.8} strokeWeight={4} />}
     </Map>
   );
 }
