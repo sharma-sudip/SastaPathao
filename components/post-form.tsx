@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import dynamic from "next/dynamic";
 import { LocationPicker } from "@/components/location-picker";
-import { suggestedPriceCents, MIN_PRICE_DOLLARS } from "@/lib/pricing";
+import { suggestedPriceCents, suggestedPriceCentsForMeters, MIN_PRICE_DOLLARS } from "@/lib/pricing";
 import type { PostActionState } from "@/lib/action-types";
 
 const DualLocationMap = dynamic(() => import("@/components/dual-location-map"), {
@@ -61,11 +61,16 @@ export function PostForm({
   // auto-suggestion from clobbering a price the user already typed (or, for
   // "request again", the price carried over from the past post -- treated
   // the same as if they'd typed it themselves, so re-picking/nudging a pin
-  // doesn't silently replace their repeated price). Adjusted during render
-  // (React's recommended pattern for "derive state from changed props/state"
-  // without an effect) rather than in a useEffect, guarded by
-  // `lastPricedCoordsKey` so it only fires once per coordinate change
-  // instead of looping.
+  // doesn't silently replace their repeated price). Two-stage: an instant
+  // straight-line estimate the moment both pins are set (derived during
+  // render -- React's recommended pattern for this, rather than a
+  // useEffect -- guarded by `lastPricedCoordsKey` so it only fires once per
+  // coordinate change instead of looping), then handleRouteChange below
+  // upgrades it in place to a real-driving-distance estimate once
+  // DualLocationMap's own Directions call resolves a moment later --
+  // driving distance is basically always longer than straight-line, so
+  // this second number is consistently a little higher, not just a
+  // refinement in either direction.
   const [askingPrice, setAskingPrice] = useState(
     initialValues?.askingPriceCents != null ? (initialValues.askingPriceCents / 100).toFixed(0) : ""
   );
@@ -83,6 +88,12 @@ export function PostForm({
       const cents = suggestedPriceCents(origin.coords!, destination.coords!);
       setAskingPrice((cents / 100).toFixed(0));
     }
+  }
+
+  function handleRouteChange(route: { distanceMeters: number; durationSeconds: number } | null) {
+    if (!route || priceTouched) return;
+    const cents = suggestedPriceCentsForMeters(route.distanceMeters);
+    setAskingPrice((cents / 100).toFixed(0));
   }
 
   async function handleMapPick(lat: number, lng: number) {
@@ -130,7 +141,12 @@ export function PostForm({
           right now.
         </p>
         <div className="overflow-hidden rounded-lg border border-border">
-          <DualLocationMap origin={origin.coords} destination={destination.coords} onPick={handleMapPick} />
+          <DualLocationMap
+            origin={origin.coords}
+            destination={destination.coords}
+            onPick={handleMapPick}
+            onRouteChange={handleRouteChange}
+          />
         </div>
       </div>
 

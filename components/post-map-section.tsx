@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { Navigation } from "lucide-react";
 
@@ -30,43 +29,24 @@ function formatDuration(seconds: number) {
 }
 
 // Post detail page's map -- origin/destination pins plus the actual driving
-// route between them, fetched from our own /api/geocode/directions (never
-// calls Google directly from the browser -- see lib/directions.ts). Falls
-// back to just the pins, no line/caption, if that fetch fails for any
-// reason (key not set yet, no route found, network hiccup) -- never blocks
-// the rest of the page.
-export function PostMapSection({ origin, destination }: { origin: Point; destination: Point | null }) {
-  const [route, setRoute] = useState<Route | null>(null);
-
-  const destLat = destination?.lat;
-  const destLng = destination?.lng;
-
-  useEffect(() => {
-    if (destLat == null || destLng == null) return;
-    let cancelled = false;
-
-    async function loadRoute() {
-      try {
-        const params = new URLSearchParams({
-          originLat: String(origin.lat),
-          originLng: String(origin.lng),
-          destLat: String(destLat),
-          destLng: String(destLng),
-        });
-        const res = await fetch(`/api/geocode/directions?${params}`);
-        const data = await res.json();
-        if (!cancelled) setRoute(data.route ?? null);
-      } catch {
-        if (!cancelled) setRoute(null);
-      }
-    }
-
-    loadRoute();
-    return () => {
-      cancelled = true;
-    };
-  }, [origin.lat, origin.lng, destLat, destLng]);
-
+// route between them. `route` is fetched server-side by the page itself
+// (lib/directions.ts's getDrivingRoute, via app/(site)/posts/[id]/page.tsx)
+// rather than by this component -- the page also needs that same distance
+// for its driver-offer price suggestion (lib/pricing.ts's
+// suggestedPriceCentsForMeters), so fetching it once there and passing it
+// down avoids two separate Directions API calls for the same page load.
+// null just means no route (missing coordinates, or the Directions call
+// failed/found nothing) -- shows the pins with no line/caption either way,
+// never blocks the rest of the page.
+export function PostMapSection({
+  origin,
+  destination,
+  route,
+}: {
+  origin: Point;
+  destination: Point | null;
+  route: Route | null;
+}) {
   return (
     <div className="space-y-2">
       <div className="overflow-hidden rounded-xl border border-border">

@@ -20,10 +20,15 @@ export default function DualLocationMap({
   origin,
   destination,
   onPick,
+  onRouteChange,
 }: {
   origin: LatLng | null;
   destination: LatLng | null;
   onPick: (lat: number, lng: number) => void;
+  /** Fires whenever the fetched route changes (including to null) -- lets
+   *  post-form.tsx upgrade its instant straight-line price suggestion to
+   *  one based on real driving distance once this resolves. */
+  onRouteChange?: (route: { distanceMeters: number; durationSeconds: number } | null) => void;
 }) {
   const map = useMap("dual-location-map");
   // Google's own dark map style, no CSS filter trick needed (that was a
@@ -46,7 +51,10 @@ export default function DualLocationMap({
 
     async function loadRoute() {
       if (originLat == null || originLng == null || destLat == null || destLng == null) {
-        if (!cancelled) setRoutePolyline(null);
+        if (!cancelled) {
+          setRoutePolyline(null);
+          onRouteChange?.(null);
+        }
         return;
       }
       try {
@@ -58,9 +66,17 @@ export default function DualLocationMap({
         });
         const res = await fetch(`/api/geocode/directions?${params}`);
         const data = await res.json();
-        if (!cancelled) setRoutePolyline(data.route?.polyline ?? null);
+        if (!cancelled) {
+          setRoutePolyline(data.route?.polyline ?? null);
+          onRouteChange?.(
+            data.route ? { distanceMeters: data.route.distanceMeters, durationSeconds: data.route.durationSeconds } : null
+          );
+        }
       } catch {
-        if (!cancelled) setRoutePolyline(null);
+        if (!cancelled) {
+          setRoutePolyline(null);
+          onRouteChange?.(null);
+        }
       }
     }
 
@@ -68,6 +84,10 @@ export default function DualLocationMap({
     return () => {
       cancelled = true;
     };
+    // onRouteChange intentionally excluded -- this should only re-fetch when
+    // the coordinates themselves change, not when the parent re-renders
+    // with a new (but equivalent) callback reference.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [originLat, originLng, destLat, destLng]);
 
   // Keep both pins in view once both are set; otherwise just pan to

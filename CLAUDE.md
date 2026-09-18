@@ -101,10 +101,18 @@ ancestor at all, regardless of whether the script load itself succeeds, so this 
 missing/invalid key a graceful "map won't load" (visibly, via Google's own error dialog) rather
 than a crashed page.
 
-`lib/pricing.ts`'s distance-based price suggestion is deliberately still the straight-line
-(haversine) estimate, not real driving distance from the Directions call above — it needs to
-update instantly as someone types/picks an address on the post form, before a post (and any
-reason to call Directions, which only happens for an existing post) exists at all.
+`lib/pricing.ts`'s distance-based price suggestion is two-stage: an instant straight-line
+(haversine) estimate the moment both pins are set on the post form (`suggestedPriceCents`, since
+this has to update before there's any post to call Directions against), upgraded in place to
+`suggestedPriceCentsForMeters`'s real-driving-distance estimate once `DualLocationMap`'s own
+Directions call resolves a moment later — driving distance is basically always longer than
+straight-line, so this second number is consistently a little higher, not just a refinement in
+either direction. `post-form.tsx`'s `priceTouched` guards both stages the same way, so neither
+one clobbers a price the rider already typed (or repeated via "request again"). The post detail
+page's driver-offer default reuses the exact same `getDrivingRoute` call its map already makes
+for the drawn route (`post-map-section.tsx`) rather than fetching Directions twice for one page
+load. $1.25/mile, no flat cushion, $5 floor (`MIN_PRICE_DOLLARS`, shared with a post's asking
+price and a claim's offer/counter).
 
 The post detail page's "Get directions" link (`lib/maps-url.ts`) is unrelated to all of this and
 unchanged from `main` — it just hands the two addresses to a `google.com/maps/dir/` URL and lets

@@ -5,7 +5,8 @@ import { auth } from "@/auth";
 import { getPostById } from "@/lib/db/queries";
 import { formatDepartAt, formatRelativeTime } from "@/lib/format-date";
 import { directionsUrl } from "@/lib/maps-url";
-import { formatCents, suggestedPriceCents, MIN_PRICE_DOLLARS } from "@/lib/pricing";
+import { getDrivingRoute } from "@/lib/directions";
+import { formatCents, suggestedPriceCents, suggestedPriceCentsForMeters, MIN_PRICE_DOLLARS } from "@/lib/pricing";
 import { Avatar } from "@/components/avatar";
 import { ContactCard } from "@/components/contact-card";
 import { ClaimList } from "@/components/claim-list";
@@ -33,17 +34,34 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
   const confirmedClaim = post.claims.find((c) => c.status === "CONFIRMED");
   const displayPriceCents = confirmedClaim?.offerAmountCents ?? post.askingPriceCents;
 
+  // The map's drawn route and the driver-offer price suggestion both want
+  // the same driving-distance data, so it's fetched once here rather than
+  // twice (once server-side for pricing, once client-side for the route
+  // line) -- see components/post-map-section.tsx.
+  const hasCoords =
+    post.originLat != null && post.originLng != null && post.destLat != null && post.destLng != null;
+  const route = hasCoords
+    ? await getDrivingRoute(
+        { lat: post.originLat!, lng: post.originLng! },
+        { lat: post.destLat!, lng: post.destLng! }
+      )
+    : null;
+
   // The rider not setting an asking price shouldn't leave a driver staring
-  // at a blank field -- fall back to the same heuristic the post form
-  // itself suggests, computed from the same coordinates, as a starting
-  // point for their offer. Only post.askingPriceCents (never this fallback)
+  // at a blank field -- fall back to a distance-based heuristic as a
+  // starting point for their offer: real driving distance (lib/pricing.ts's
+  // suggestedPriceCentsForMeters) when the route above resolved, otherwise
+  // the same straight-line estimate the post form shows before its own
+  // route call resolves. Only post.askingPriceCents (never this fallback)
   // shows in the header above, though -- that badge is the rider's own
   // stated price, not a guess made on their behalf.
   const suggestedOfferCents =
     post.askingPriceCents ??
-    (post.originLat != null && post.originLng != null && post.destLat != null && post.destLng != null
-      ? suggestedPriceCents({ lat: post.originLat, lng: post.originLng }, { lat: post.destLat, lng: post.destLng })
-      : null);
+    (route
+      ? suggestedPriceCentsForMeters(route.distanceMeters)
+      : hasCoords
+        ? suggestedPriceCents({ lat: post.originLat!, lng: post.originLng! }, { lat: post.destLat!, lng: post.destLng! })
+        : null);
 
   // The driver (confirmed claimant, not the rider) is the one who marks a
   // ride completed -- see lib/coupons.ts.
@@ -101,6 +119,7 @@ export default async function PostDetailPage({ params }: PageProps<"/posts/[id]"
               ? { lat: post.destLat, lng: post.destLng, label: post.destination }
               : null
           }
+          route={route}
         />
       )}
 
