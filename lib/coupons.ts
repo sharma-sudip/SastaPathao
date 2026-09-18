@@ -1,8 +1,12 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { and, eq, lt } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { posts, claims, coupons } from "@/lib/db/schema";
+
+// Matches lib/posts.ts's STALE_HOURS -- see autoCompleteStaleFilledPosts
+// below and autoCancelStalePosts there.
+const STALE_HOURS = 24;
 
 /**
  * Driver (the CONFIRMED claimant, not the rider) marks a FILLED ride
@@ -39,6 +43,63 @@ export async function completeRide(driverId: string, postId: string) {
 
     return { riderId: post.authorId, couponCode: coupon.code };
   });
+}
+
+/**
+ * FILLED posts whose ride time passed more than a day ago but the driver
+ * never marked it completed -- auto-completes the same way completeRide
+ * above does (mints the rider's coupon), rather than leaving it FILLED
+ * forever and the rider's coupon in limbo. Used by the daily cron
+ * (app/api/cron/purge-old-data); the caller does the notify/email fan-out
+ * for each returned post, mirroring completeRideAction.
+ */
+export async function autoCompleteStaleFilledPosts() {
+  const cutoff = new Date(Date.now() - STALE_HOURS * 60 * 60 * 1000);
+
+  const stale = await db.query.posts.findMany({
+    where: and(eq(posts.status, "FILLED"), lt(posts.departAt, cutoff)),
+    columns: { id: true, authorId: true, origin: true, destination: true },
+    with: { claims: { where: eq(claims.status, "CONFIRMED"), columns: { claimantId: true } } },
+  });
+
+  const results: Array<{
+    postId: string;
+    riderId: string;
+    driverId: string;
+    origin: string;
+    destination: string;
+    couponCode: string;
+  }> = [];
+
+  for (const post of stale) {
+    const confirmedClaim = post.claims[0];
+    // Shouldn't happen for a FILLED post -- confirmClaim always leaves
+    // exactly one CONFIRMED claim behind -- but skip rather than throw if
+    // the data's ever in a state that doesn't hold.
+    if (!confirmedClaim) continue;
+
+    const couponCode = await db.transaction(async (tx) => {
+      await tx.update(posts).set({ status: "COMPLETED", updatedAt: new Date() }).where(eq(posts.id, post.id));
+
+      const [coupon] = await tx
+        .insert(coupons)
+        .values({ postId: post.id, userId: post.authorId, code: crypto.randomUUID() })
+        .returning({ code: coupons.code });
+
+      return coupon.code;
+    });
+
+    results.push({
+      postId: post.id,
+      riderId: post.authorId,
+      driverId: confirmedClaim.claimantId,
+      origin: post.origin,
+      destination: post.destination,
+      couponCode,
+    });
+  }
+
+  return results;
 }
 
 export async function getCouponByCode(code: string) {

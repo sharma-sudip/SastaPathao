@@ -1,11 +1,17 @@
 import "server-only";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, lt } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { posts, claims } from "@/lib/db/schema";
 import type { PostFormValues } from "@/lib/validation";
 import { parseEasternDatetimeLocal } from "@/lib/format-date";
 import { dollarsToCents } from "@/lib/pricing";
+
+// How long past its ride time a post gets to be matched/completed before
+// the daily cron (app/api/cron/purge-old-data) steps in -- see
+// autoCancelStalePosts here and autoCompleteStaleFilledPosts in
+// lib/coupons.ts.
+const STALE_HOURS = 24;
 
 export async function createPost(authorId: string, values: PostFormValues) {
   const [post] = await db
@@ -59,4 +65,53 @@ export async function cancelPost(authorId: string, postId: string) {
 
     return { autoDeclinedClaimantIds: declined.map((d) => d.claimantId) };
   });
+}
+
+/**
+ * OPEN/PENDING posts whose ride time passed more than a day ago -- nobody
+ * ever got confirmed to drive them, so auto-cancel rather than let them
+ * linger forever. Declines any still-PROPOSED claims the same way
+ * cancelPost above does. Used by the daily cron
+ * (app/api/cron/purge-old-data); the caller does the notify/email fan-out
+ * for each returned post, mirroring cancelPostAction.
+ */
+export async function autoCancelStalePosts() {
+  const cutoff = new Date(Date.now() - STALE_HOURS * 60 * 60 * 1000);
+
+  const stale = await db.query.posts.findMany({
+    where: and(inArray(posts.status, ["OPEN", "PENDING"]), lt(posts.departAt, cutoff)),
+    columns: { id: true, authorId: true, origin: true, destination: true },
+  });
+
+  const results: Array<{
+    postId: string;
+    authorId: string;
+    origin: string;
+    destination: string;
+    declinedClaimantIds: string[];
+  }> = [];
+
+  for (const post of stale) {
+    const declinedClaimantIds = await db.transaction(async (tx) => {
+      const declined = await tx
+        .update(claims)
+        .set({ status: "DECLINED", respondedAt: new Date() })
+        .where(and(eq(claims.postId, post.id), eq(claims.status, "PROPOSED")))
+        .returning({ claimantId: claims.claimantId });
+
+      await tx.update(posts).set({ status: "CANCELLED", updatedAt: new Date() }).where(eq(posts.id, post.id));
+
+      return declined.map((d) => d.claimantId);
+    });
+
+    results.push({
+      postId: post.id,
+      authorId: post.authorId,
+      origin: post.origin,
+      destination: post.destination,
+      declinedClaimantIds,
+    });
+  }
+
+  return results;
 }

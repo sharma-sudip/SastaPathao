@@ -57,6 +57,16 @@ Never add `phone` to any other query; route any new contact-reveal need through 
 push in parallel — both best-effort (never throw). Each event's transactional email (React Email
 templates in `emails/`) is sent separately alongside this, not through `notifyUser`.
 
+**Daily cron** (`app/api/cron/purge-old-data`, scheduled in `vercel.json`, gated on `CRON_SECRET`):
+a post that's still `OPEN`/`PENDING` a day past its `departAt` auto-cancels (`lib/posts.ts`'s
+`autoCancelStalePosts` — nobody ever got confirmed to drive it, so no coupon); a post that's
+`FILLED` a day past `departAt` but never marked done auto-completes instead (`lib/coupons.ts`'s
+`autoCompleteStaleFilledPosts` — a driver *was* confirmed, so this mints the rider's coupon same
+as the manual "mark completed" button would). Both notify/email everyone affected, mirroring
+`cancelPostAction`/`completeRideAction`'s own fan-out. Separately, `lib/retention.ts`'s
+`purgeOldPosts` hard-deletes any post 30+ days past `departAt` regardless of status, cascading to
+its claims/messages.
+
 **Auth**: Auth.js v5 (`auth.ts`) with the Drizzle adapter and **database sessions** (not JWT), since
 magic-link tokens are already persisted via the adapter and this makes `signOut()` an immediate
 server-side revocation. Sign-in is a 6-digit code emailed via Resend (`generateVerificationToken`
