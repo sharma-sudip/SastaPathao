@@ -18,6 +18,10 @@ project, not a Pathao product.
 - [Web Push](https://web.dev/push-notifications-overview/) (VAPID) for optional browser
   notifications — a self-generated keypair, not a third-party account/API key
 - [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) for profile picture uploads
+- **`google-maps` branch only** (not on `main`): [Google Maps](https://developers.google.com/maps)
+  for address search/autocomplete, reverse geocoding, an interactive map, and a drawn driving
+  route — needs a real, billing-enabled API key, unlike everything else on this list. See
+  CLAUDE.md for the two-separate-keys setup.
 - Tailwind CSS
 
 ## Setup
@@ -41,32 +45,41 @@ project, not a Pathao product.
    `vercel env pull .env.local` once the project's linked. Without it, uploading a photo just
    errors — everything else in the app still works.
 
-5. **Configure environment variables**
+5. **`google-maps` branch only: set up Google Maps Platform** — needs a real, billing-enabled
+   project (no free-tier fallback on this branch). In Google Cloud Console: enable **Places API
+   (New)**, **Geocoding API**, **Directions API**, and **Maps JavaScript API**; enable billing;
+   set a budget alert; then create **two separate API keys** (see CLAUDE.md for exactly how each
+   should be restricted) for `GOOGLE_MAPS_API_KEY` and `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` below.
+   Without these, every map on the site shows Google's own "can't load Google Maps" placeholder
+   instead of crashing — fine for working on anything else in the meantime.
+
+6. **Configure environment variables**
 
    ```bash
    cp .env.example .env.local
    ```
 
    Fill in `DATABASE_URL` (from Neon), `RESEND_API_KEY` and `EMAIL_FROM` (from Resend),
-   `BLOB_READ_WRITE_TOKEN` (from the Blob store above), and generate an `AUTH_SECRET`:
+   `BLOB_READ_WRITE_TOKEN` (from the Blob store above), `GOOGLE_MAPS_API_KEY` and
+   `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (from step 5), and generate an `AUTH_SECRET`:
 
    ```bash
    npx auth secret
    ```
 
-6. **Run the database migration**
+7. **Run the database migration**
 
    ```bash
    npm run db:migrate
    ```
 
-7. **(Optional) Seed sample data** for local testing:
+8. **(Optional) Seed sample data** for local testing:
 
    ```bash
    npm run db:seed
    ```
 
-8. **Start the dev server**
+9. **Start the dev server**
 
    ```bash
    npm run dev
@@ -96,8 +109,8 @@ project, not a Pathao product.
   (the ride board at `/board`, sign-in, dashboard, etc.) lives under the `app/(site)/` route
   group, which is what adds the normal nav + footer layout; see `app/(site)/layout.tsx` vs the
   bare root `app/layout.tsx`.
-- **Posts**: a ride request (someone needs a ride), each with a free-text origin/destination,
-  a `departAt` time that can be in the future, and a status
+- **Posts**: a ride request (someone needs a ride), each with an origin/destination (label +
+  optional map coordinates), a `departAt` time that can be in the future, and a status
   (`OPEN` → `PENDING` → `FILLED`/`CANCELLED`). There's no separate "offer a ride" post type —
   drivers respond to open requests instead of posting their own routes ahead of time.
 - **Claims**: another user volunteers to fill a request (`PROPOSED`) — multiple people can
@@ -133,21 +146,26 @@ project, not a Pathao product.
   reports as gone (endpoint uninstalled, permission revoked, etc.) gets deleted automatically
   rather than retried forever. Both `notifyUser` and email are best-effort — never throw, never
   block the action that triggered them.
-- **No maps or geocoding**: `origin`/`destination` are plain free-text fields, no autocomplete,
-  no coordinates, no map display. This app used to geocode them (Photon by default, an optional
-  Google comparison) for an interactive map and a distance-based price suggestion — removed since
-  the free geocoder's address-level accuracy was poor enough to cause real confusion, and a
-  billed Google key wasn't worth it for a non-revenue app (see git history). The post detail
-  page's "Get directions" link (`lib/maps-url.ts`) still works without any of this — it hands the
-  two free-text addresses straight to a `google.com/maps/dir/` URL, which geocodes them itself
-  when the link opens.
+- **Maps/geocoding** (`google-maps` branch — see CLAUDE.md for the full breakdown): Google-only,
+  no free-tier fallback, split across two API keys restricted differently — `GOOGLE_MAPS_API_KEY`
+  (server-only: Places/Geocoding/Directions, called from `app/api/geocode/*`) and
+  `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (public, HTTP-referrer-restricted: Maps JavaScript API tiles
+  only, via `components/google-maps-provider.tsx`). The post form's shared click-to-place map
+  (`dual-location-map.tsx`), the post detail page's map + drawn route
+  (`post-map.tsx`/`post-map-section.tsx`), and the board's map view (`feed-map.tsx`) all use
+  `@vis.gl/react-google-maps`. `lib/pricing.ts`'s price suggestion stays a straight-line
+  (haversine) estimate rather than real driving distance, since it has to update instantly while
+  someone's still typing an address, before a post (and any reason to call Directions) exists.
+  The post detail page's "Get directions" link (`lib/maps-url.ts`) is unrelated and needs no API
+  key at all — it hands the two addresses straight to a `google.com/maps/dir/` URL, which
+  geocodes them itself when the link opens.
 
 ## Verifying changes locally
 
 There's no automated test suite (consistent with the rest of this repo) — verify manually:
 
 1. `npm run dev` and walk through the relevant page(s) by hand.
-2. `npm run db:seed` to populate a few sample posts, so the feed isn't empty.
+2. `npm run db:seed` to populate a few sample posts, so the feed (list and map view) isn't empty.
 3. `npm run db:studio` to visually confirm post/claim status transitions after each UI action
    (e.g. confirming a claim should flip the post to `FILLED` and any sibling claims to
    `DECLINED`).
