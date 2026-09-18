@@ -6,8 +6,18 @@ import type { PostActionState } from "@/lib/action-types";
 
 export function PostForm({
   action,
+  initialValues,
 }: {
   action: (state: PostActionState, formData: FormData) => Promise<PostActionState>;
+  /** "Request again" from a past post (requests/new/page.tsx's `?repeat=`) --
+   *  prefills everything except the date, which always needs a fresh,
+   *  future value from the user. */
+  initialValues?: {
+    origin: string;
+    destination: string;
+    notes: string | null;
+    askingPriceCents: number | null;
+  };
 }) {
   const [state, formAction, pending] = useActionState(action, undefined);
   const fieldErrors = state?.fieldErrors;
@@ -23,6 +33,7 @@ export function PostForm({
           name="origin"
           type="text"
           required
+          defaultValue={initialValues?.origin ?? ""}
           placeholder="e.g. Boardman Plaza"
           aria-invalid={!!fieldErrors?.origin}
           className={`mt-1 w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 ${
@@ -43,6 +54,7 @@ export function PostForm({
           name="destination"
           type="text"
           required
+          defaultValue={initialValues?.destination ?? ""}
           placeholder="e.g. YSU campus"
           aria-invalid={!!fieldErrors?.destination}
           className={`mt-1 w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 ${
@@ -90,6 +102,9 @@ export function PostForm({
             min={MIN_PRICE_DOLLARS}
             max="500"
             step="1"
+            defaultValue={
+              initialValues?.askingPriceCents != null ? (initialValues.askingPriceCents / 100).toFixed(0) : ""
+            }
             placeholder="0"
             aria-invalid={!!fieldErrors?.askingPrice}
             className={`w-full rounded-lg border bg-background py-2 pl-6 pr-3 text-sm text-foreground focus:outline-none focus:ring-2 ${
@@ -117,6 +132,7 @@ export function PostForm({
           id="notes"
           name="notes"
           rows={3}
+          defaultValue={initialValues?.notes ?? ""}
           placeholder="Flexible on time, can meet nearby, etc."
           className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
         />

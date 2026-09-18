@@ -2,16 +2,21 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { useTheme } from "next-themes";
+import { Menu, X, Sun, Moon } from "lucide-react";
 
-const LINK_CLASS = "block px-4 py-2.5 text-sm font-semibold text-card-foreground transition hover:bg-muted";
+const LINK_CLASS = "flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-semibold text-card-foreground transition hover:bg-muted";
 
-// The desktop nav shows "Need a ride" / "Offer a ride" / "Profile" / "Admin"
-// / "Redeem" inline (they're just hidden below `sm` there via `hidden
-// sm:inline-block`) -- "Need a ride"/"Offer a ride" are also reachable via
-// <MobileTabBar>, but Profile/Admin/Redeem aren't reachable at all below
-// `sm` without this. Kept as its own client component since <Nav> itself is
-// an async server component and this needs local open/close state.
+// The desktop nav shows "My rides" / "Need a ride" / "Offer a ride" /
+// "Profile" / "Admin" / "Redeem" inline (they're just hidden below `sm`
+// there via `hidden sm:inline-block`) -- "Need a ride"/"Offer a ride" are
+// also reachable via <MobileTabBar>, but My rides/Profile/Admin/Redeem
+// aren't reachable at all below `sm` without this. The theme toggle and
+// full-text sign-out also collapse into here on mobile -- <Nav> keeps only
+// the hamburger, notification bell, and an icon-only sign-out visible in
+// the bar itself below `sm`. Kept as its own client component since <Nav>
+// itself is an async server component and this needs local open/close
+// state.
 export function MobileNavMenu({
   isSignedIn,
   isAdmin = false,
@@ -23,6 +28,7 @@ export function MobileNavMenu({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { resolvedTheme, setTheme } = useTheme();
 
   useEffect(() => {
     if (!open) return;
@@ -54,6 +60,11 @@ export function MobileNavMenu({
             Offer a ride
           </Link>
           {isSignedIn && (
+            <Link href="/dashboard" onClick={() => setOpen(false)} className={LINK_CLASS}>
+              My rides
+            </Link>
+          )}
+          {isSignedIn && (
             <Link href="/account" onClick={() => setOpen(false)} className={LINK_CLASS}>
               Profile
             </Link>
@@ -68,6 +79,14 @@ export function MobileNavMenu({
               Redeem
             </Link>
           )}
+          <button type="button" onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")} className={LINK_CLASS}>
+            {resolvedTheme === "dark" ? (
+              <Sun className="h-4 w-4" strokeWidth={2.25} />
+            ) : (
+              <Moon className="h-4 w-4" strokeWidth={2.25} />
+            )}
+            {resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
+          </button>
         </div>
       )}
     </div>

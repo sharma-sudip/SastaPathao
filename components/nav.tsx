@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogOut } from "lucide-react";
 import { auth, signOut } from "@/auth";
 import { isAdminEmail } from "@/lib/admin";
 import { isPartnerEmail } from "@/lib/partner";
@@ -38,7 +39,7 @@ export async function Nav() {
             <>
               <Link
                 href="/dashboard"
-                className="rounded-full px-3 py-1.5 font-semibold text-foreground/80 transition hover:bg-muted hover:text-foreground"
+                className="hidden rounded-full px-3 py-1.5 font-semibold text-foreground/80 transition hover:bg-muted hover:text-foreground sm:inline-block"
               >
                 My rides
               </Link>
@@ -70,12 +71,33 @@ export async function Nav() {
                   "use server";
                   await signOut({ redirectTo: "/" });
                 }}
+                className="hidden sm:block"
               >
                 <button
                   type="submit"
                   className="rounded-full px-3 py-1.5 font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground"
                 >
                   Sign out
+                </button>
+              </form>
+              {/* Icon-only below `sm` -- the bar there only ever shows the
+                  hamburger, notification bell, and this, everything else
+                  (My rides, Profile, Admin, Redeem, theme) lives in
+                  <MobileNavMenu> instead. */}
+              <form
+                action={async () => {
+                  "use server";
+                  await signOut({ redirectTo: "/" });
+                }}
+                className="sm:hidden"
+              >
+                <button
+                  type="submit"
+                  aria-label="Sign out"
+                  title="Sign out"
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                >
+                  <LogOut className="h-4 w-4" strokeWidth={2.25} />
                 </button>
               </form>
             </>
@@ -88,7 +110,9 @@ export async function Nav() {
             </Link>
           )}
           {session?.user && <NotificationBell />}
-          <ThemeToggle />
+          <div className="hidden sm:block">
+            <ThemeToggle />
+          </div>
           <MobileNavMenu
             isSignedIn={!!session?.user}
             isAdmin={isAdminEmail(session?.user?.email)}

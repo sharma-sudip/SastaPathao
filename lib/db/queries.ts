@@ -69,6 +69,26 @@ export async function getUserPosts(userId: string) {
   });
 }
 
+/**
+ * A user's own past post, to prefill the "request again" form
+ * (requests/new/page.tsx's `?repeat=` param) -- scoped to that user's
+ * authorId in the query itself, not just checked after fetching, so this
+ * can never return (or leak) another user's post.
+ */
+export async function getOwnPostForRepeat(postId: string, authorId: string) {
+  const [row] = await db
+    .select({
+      origin: posts.origin,
+      destination: posts.destination,
+      notes: posts.notes,
+      askingPriceCents: posts.askingPriceCents,
+    })
+    .from(posts)
+    .where(and(eq(posts.id, postId), eq(posts.authorId, authorId)))
+    .limit(1);
+  return row ?? null;
+}
+
 /** Claims a given user has made on other people's posts, newest first. */
 export async function getUserClaims(userId: string) {
   return db.query.claims.findMany({

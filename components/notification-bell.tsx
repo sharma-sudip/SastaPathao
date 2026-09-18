@@ -71,10 +71,10 @@ export function NotificationBell() {
     // <nav> in components/nav.tsx (which has it), so the dropdown's right
     // edge is the actual right edge of the header -- anchoring to just this
     // small wrapper put the panel's right edge wherever the bell happens to
-    // sit, which on mobile (My rides / sign out / theme toggle all to its
-    // right) pushed the panel's left side off-screen. At `sm` and up there's
-    // no overflow risk, so it anchors back to the bell itself rather than
-    // jumping to the far right edge of a much wider header.
+    // sit, which on mobile (the icon-only sign-out and hamburger both still
+    // sit to its right) pushed the panel's left side off-screen. At `sm` and
+    // up there's no overflow risk, so it anchors back to the bell itself
+    // rather than jumping to the far right edge of a much wider header.
     <div ref={ref} className="sm:relative">
       <button
         type="button"

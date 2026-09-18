@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { RotateCcw } from "lucide-react";
 import { auth } from "@/auth";
 import { getUserPosts, getUserClaims } from "@/lib/db/queries";
 import { getUserCoupons } from "@/lib/coupons";
@@ -42,18 +43,30 @@ export default async function DashboardPage() {
         ) : (
           <div className="space-y-2">
             {myPosts.map((post) => (
-              <Link
+              <div
                 key={post.id}
-                href={`/posts/${post.id}`}
-                className="flex items-center justify-between rounded-xl border border-border bg-card p-3 shadow-sm transition hover:border-primary"
+                className="flex items-center gap-2 rounded-xl border border-border bg-card p-3 shadow-sm transition hover:border-primary"
               >
-                <span className="text-sm text-card-foreground">
-                  {post.origin} → {post.destination}
-                </span>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_STYLE[post.status]}`}>
-                  {post.status}
-                </span>
-              </Link>
+                <Link href={`/posts/${post.id}`} className="flex min-w-0 flex-1 items-center gap-2">
+                  <span className="truncate text-sm text-card-foreground">
+                    {post.origin} → {post.destination}
+                  </span>
+                  <span
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_STYLE[post.status]}`}
+                  >
+                    {post.status}
+                  </span>
+                </Link>
+                <Link
+                  href={`/requests/new?repeat=${post.id}`}
+                  title="Request this ride again"
+                  aria-label="Request this ride again"
+                  className="flex shrink-0 items-center gap-1 rounded-full border border-border px-2 py-1 text-xs font-bold text-primary transition hover:bg-muted"
+                >
+                  <RotateCcw className="h-3 w-3" strokeWidth={2.5} />
+                  Again
+                </Link>
+              </div>
             ))}
           </div>
         )}
