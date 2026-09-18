@@ -28,14 +28,29 @@ export async function getDrivingRoute(
     key: GOOGLE_API_KEY,
   });
   const res = await fetch(`https://maps.googleapis.com/maps/api/directions/json?${params}`);
-  if (!res.ok) return null;
+  if (!res.ok) {
+    console.error(`Directions API request failed: HTTP ${res.status}`);
+    return null;
+  }
 
   const data = (await res.json()) as {
+    // Google's Directions API almost always answers HTTP 200 even on
+    // failure (bad/restricted key, API not enabled, billing not set up,
+    // etc.) -- the real result is this `status` field, not the HTTP
+    // status above. Logged here since a silent `return null` otherwise
+    // looks identical in the browser (just no route drawn) whether the
+    // key is misconfigured or the route genuinely doesn't exist.
+    status?: string;
+    error_message?: string;
     routes?: Array<{
       overview_polyline?: { points: string };
       legs?: Array<{ distance?: { value: number }; duration?: { value: number } }>;
     }>;
   };
+  if (data.status && data.status !== "OK") {
+    console.error(`Directions API returned ${data.status}${data.error_message ? `: ${data.error_message}` : ""}`);
+    return null;
+  }
   const route = data.routes?.[0];
   const leg = route?.legs?.[0];
   if (!route?.overview_polyline?.points || !leg?.distance || !leg?.duration) return null;
