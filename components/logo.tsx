@@ -5,7 +5,7 @@ const SIZES = {
   lg: { text: "text-4xl sm:text-5xl", icon: "h-10 w-10 sm:h-12 sm:w-12" },
 } as const;
 
-// The brand mark used in the nav and the barber-partnership promo overlay --
+// The brand mark used in the nav --
 // "Sasta" in whatever text color surrounds it, "Pathao" plus a scooter
 // glyph in the brand red (reusing --danger as the wordmark's accent rather
 // than introducing a second red token; see app/globals.css).
